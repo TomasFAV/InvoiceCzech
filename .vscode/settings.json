@@ -1,0 +1,38 @@
+{
+//   "workbench.colorTheme": "GitHub Light Default",
+//   "workbench.iconTheme": "material-icon-theme",
+
+//   "editor.fontFamily": "Fira Code, JetBrains Mono, Consolas, 'Courier New', monospace",
+//   "editor.fontLigatures": true,
+//   "editor.fontSize": 14,
+//   "editor.lineHeight": 22,
+//   "editor.cursorBlinking": "smooth",
+//   "editor.cursorSmoothCaretAnimation": "on",
+//   "editor.smoothScrolling": true,
+
+//   "editor.guides.bracketPairs": "active",
+//   "editor.bracketPairColorization.enabled": true,
+//   "editor.renderWhitespace": "selection",
+//   "editor.rulers": [100],
+//   "editor.stickyScroll.enabled": true,
+//   "breadcrumbs.enabled": true,
+
+//   "editor.minimap.renderCharacters": false,
+//   "editor.minimap.size": "fit",
+//   "explorer.compactFolders": false,
+
+//   "workbench.colorCustomizations": {
+//     "editor.lineHighlightBackground": "#00000008",
+//     "editor.lineHighlightBorder": "#00000000"
+//   },
+
+    "terminal.integrated.defaultProfile.windows": "Command Prompt",
+    "terminal.integrated.profiles.windows": {
+    "Command Prompt": { "path": "C:\\\\Windows\\\\System32\\\\cmd.exe", "args": [] }
+    },
+//   "terminal.integrated.fontFamily": "monospace",
+//   "terminal.integrated.cursorBlinking": true,
+//   "terminal.integrated.gpuAcceleration": "on",
+
+//   "window.zoomLevel": 0
+}
