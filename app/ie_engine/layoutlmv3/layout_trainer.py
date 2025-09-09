@@ -19,11 +19,7 @@ class layout_trainer:
 
     def train()->tuple[Any, Any]:
         
-        model_name:str = "microsoft/layoutlmv3-base" 
-
-        image_size:list[int] = [620, 877]
-        max_length:int = 400
-        
+        model_name:str = "microsoft/layoutlmv3-base"         
         
         processor = LayoutLMv3Processor.from_pretrained(model_name,apply_ocr=False)
         model:LayoutLMv3Model = LayoutLMv3Model.from_pretrained(model_name)
@@ -53,7 +49,7 @@ class layout_trainer:
             devices=1,
             max_epochs=10,
             check_val_every_n_epoch=2,
-            precision=16, # we'll use mixed precision
+            precision=16,
             num_sanity_val_steps=0,
             callbacks=[],
         )
@@ -66,9 +62,6 @@ class layout_trainer:
 
     def predict(img: Image)->Any:
         model_name:str = "microsoft/layoutlmv3-base" 
-
-        # image_size:list[int] = [620, 877]
-        # max_length:int = 400
         
         
         processor = LayoutLMv3Processor.from_pretrained(model_name,apply_ocr=False)

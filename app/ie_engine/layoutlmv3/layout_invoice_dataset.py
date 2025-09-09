@@ -123,17 +123,6 @@ def pad_to_two_windows(enc, pad_token_id: int, ignore_index: int = -100):
             row = torch.full(enc[key].shape, ignore_index)
             pad_rows[key] = row
 
-    # Offset mapping [s, 512, 2] – volitelně vynulovat
-    if "offset_mapping" in enc:
-        row = enc["offset_mapping"][0].clone()
-        row.zero_()
-        pad_rows["offset_mapping"] = row.unsqueeze(0)
-
-    # Overflow map [s] – nové okno mapuj na stejný sample (typicky 0)
-    if "overflow_to_sample_mapping" in enc:
-        row = enc["overflow_to_sample_mapping"][0:1].clone()
-        pad_rows["overflow_to_sample_mapping"] = row
-
     # pixel_values [s, C, H, W] – duplikuj první (tvar musí sedět)
     if "pixel_values" in enc:
         row = enc["pixel_values"][0:1] 

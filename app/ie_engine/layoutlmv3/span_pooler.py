@@ -26,10 +26,6 @@ class span_pooler(nn.Module):
             "span_index_b": List[int],
             "relationship_type": List[int]        # kódy z relationship_types
         }
-
-    layoutlmv3_output:
-        List[Tensor] délky B, každý tvar [L_b, H], nebo 3D tensor [B, L_max, H] s paddingem + maskou.
-        (Zde předpokládáme List/2D; pokud máš 3D, rozpadni na list podle masky.)
     """
 
     def __init__(self, allowed_span_types_ids: List[int], hidden_size: int = None):
