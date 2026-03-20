@@ -409,7 +409,7 @@ def cal_f1(preds: List[dict], answers: List[dict]):
         """
         total_tp, total_fn_or_fp = 0, 0
         for pred, answer in zip(preds, answers):
-            pred, answer = flatten(normalize_dict(pred)), flatten(normalize_dict(answer))
+            pred, answer = flatten(normalize_dict(pred, True)), flatten(normalize_dict(answer, False))
             for field in pred:
                 if field in answer:
                     total_tp += 1
