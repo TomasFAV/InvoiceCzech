@@ -82,6 +82,26 @@ def flatten(data: dict):
         _flatten(data)
         return flatten_data
 
+def normalize_text(x):
+    if x is None:
+        return ""
+
+    if not isinstance(x, str):
+        x = str(x)
+
+    x = x.strip().lower()
+
+    if not x:
+        return ""
+
+    x = x.replace("\u00a0", " ")
+    x = re.sub(r"\s+", " ", x)
+
+    # fix "4. 80" -> "4.80", "4 , 80" -> "4,80"
+    x = re.sub(r"(\d)\s*([.,])\s*(\d)", r"\1\2\3", x)
+
+    return x
+
 #zkopírováno z repozitáře clovai/donut a lehce modifikováno
 def normalize_dict(data: Union[Dict, List, Any]):
         """
