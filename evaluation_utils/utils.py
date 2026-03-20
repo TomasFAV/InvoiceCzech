@@ -126,12 +126,12 @@ def normalize_dict(data: Union[Dict, List, Any]):
                     if item:
                         new_data.append(item)
             else:
-                new_data = [str(item).strip().lower() for item in data if type(item) in {str, int, float} and str(item).strip().lower()]
+                new_data = [normalize_text(item) for item in data if type(item) in {str, int, float}]
         else:
             try:
-              new_data = str(float(str(data).strip().lower().replace(",",".")))
+              new_data = normalize_text(str(data))
             except ValueError:
-              new_data = [str(data).strip().lower()]
+              new_data = [normalize_text(data)]
 
         return new_data
 
