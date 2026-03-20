@@ -116,7 +116,7 @@ def normalize_dict(data: Union[Dict, List, Any]):
                 value = normalize_dict(data[key])
                 if not isinstance(value, list):
                   value = [value]
-                new_data[key] = value
+                new_data[key] = normalize_text(value)
 
         elif isinstance(data, list):
             if all(isinstance(item, dict) for item in data):
