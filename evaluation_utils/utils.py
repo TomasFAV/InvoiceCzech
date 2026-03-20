@@ -257,9 +257,9 @@ def normalize_dict(data: Union[Dict, List, Any], train:bool = False):
             new_data = dict()
             for key in sorted(data.keys(), key=lambda k: (len(k), k)):
                 if train:
-                    value = clean_value(key, normalize_text(value))
+                    value = clean_value(key, normalize_text(data[key]))
                 else:
-                    value = clean_date(key, normalize_text(value))
+                    value = clean_date(key, normalize_text(data[key]))
                 if not isinstance(value, list):
                   value = [value]
                 new_data[key] = value
