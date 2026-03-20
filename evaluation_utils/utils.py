@@ -268,7 +268,7 @@ def normalize_dict(data: Union[Dict, List, Any], train:bool = False):
             if all(isinstance(item, dict) for item in data):
                 new_data = []
                 for item in data:
-                    item = normalize_dict(item)
+                    item = normalize_dict(item, train)
                     if item:
                         new_data.append(item)
             else:
@@ -431,7 +431,7 @@ def field_level_f1(preds: List[dict], answers: List[dict]):
 
         total_tp, total_fn_or_fp = 0, 0
         for pred, answer in zip(preds, answers):
-            pred, answer = flatten(normalize_dict(pred)), flatten(normalize_dict(answer))
+            pred, answer = flatten(normalize_dict(pred, True)), flatten(normalize_dict(answer, False))
             for field in answer:
                 if field in pred:
                     field_accuracy[field[0]] = (field_accuracy[field[0]][0]+1, field_accuracy[field[0]][1]+1)
@@ -449,8 +449,8 @@ def cal_acc(pred: dict, answer: dict):
         3) Divide distance with GT tree size (i.e., nTED),
         4) Calculate nTED based accuracy. (= max(1 - nTED, 0 ).
         """
-        pred = construct_tree_from_dict(normalize_dict(pred))
-        answer = construct_tree_from_dict(normalize_dict(answer))
+        pred = construct_tree_from_dict(normalize_dict(pred, True))
+        answer = construct_tree_from_dict(normalize_dict(answer, False))
         return max(
             0,
             1
@@ -483,7 +483,7 @@ def cal_precision(preds: List[dict], answers: List[dict]):
         """
         total_tp, total_fn, total_fp = 0, 0, 0
         for pred, answer in zip(preds, answers):
-            pred, answer = flatten(normalize_dict(pred)), flatten(normalize_dict(answer))
+            pred, answer = flatten(normalize_dict(pred, True)), flatten(normalize_dict(answer, False))
             for field in pred:
                 if field in answer:
                     total_tp += 1
@@ -500,8 +500,8 @@ def cal_recall(preds: List[dict], answers: List[dict]):
     total_tp, total_fn = 0, 0
 
     for pred, answer in zip(preds, answers):
-        pred = flatten(normalize_dict(pred))
-        answer = flatten(normalize_dict(answer))
+        pred = flatten(normalize_dict(pred, True))
+        answer = flatten(normalize_dict(answer, False))
 
         for field in pred:
             if field in answer:
