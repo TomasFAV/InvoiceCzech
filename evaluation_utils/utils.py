@@ -43,6 +43,149 @@ def token2json(tokens, is_inner_value=False):
 
 from typing import Any, Dict, List, Tuple, Union
 
+#################################################čištění hodnot#######################################################
+import re
+
+def _normalize_date(value: str) -> str:
+    value = str(value).strip()
+    if not value:
+        return ""
+
+    # sjednocení oddělovačů
+    value = value.replace("-", ".").replace("/", ".")
+
+    # vytáhni datum typu 3.1.2026 nebo 03.01.2026
+    m = re.search(r"(\d{1,2})\.(\d{1,2})\.(\d{4})", value)
+    if not m:
+        return ""
+
+    day = str(int(m.group(1)))
+    month = str(int(m.group(2)))
+    year = m.group(3)
+
+    return f"{day}.{month}.{year}"
+
+
+def _normalize_total(value: str) -> str:
+    value = str(value).strip()
+    if not value:
+        return ""
+
+    # nech jen čísla, čárku a tečku
+    value = re.sub(r"[^0-9,\.]", "", value)
+
+    if not value:
+        return ""
+
+    # pokud je tam jen tečka, změň ji na čárku
+    if "," not in value and "." in value:
+        # vezmeme poslední tečku jako desetinný oddělovač
+        parts = value.split(".")
+        if len(parts) == 2:
+            value = parts[0] + "," + parts[1]
+        else:
+            value = "".join(parts[:-1]) + "," + parts[-1]
+
+    # pokud je tam více čárek nebo kombinace bordelu, nech poslední oddělovač jako desetinný
+    value = value.replace(".", ",")
+    parts = value.split(",")
+
+    if len(parts) == 1:
+        return parts[0]
+
+    integer_part = "".join(parts[:-1])
+    decimal_part = parts[-1]
+
+    if integer_part == "":
+        integer_part = "0"
+
+    return f"{integer_part},{decimal_part}" if decimal_part != "" else integer_part
+
+
+def _normalize_lower_alnum(value: str) -> str:
+    value = str(value).strip().lower()
+    value = re.sub(r"[^a-z0-9]", "", value)
+    return value
+
+
+def _normalize_tax_id(value: str) -> str:
+    value = str(value).strip().lower()
+    value = re.sub(r"[^a-z0-9]", "", value)
+    return value
+
+
+def _normalize_register_id(value: str) -> str:
+    value = str(value).strip()
+    value = re.sub(r"[^0-9]", "", value)
+    return value
+
+
+def _normalize_bank_account(value: str) -> str:
+    value = str(value).strip()
+    if not value:
+        return ""
+
+    # nech čísla a lomítko
+    value = re.sub(r"[^0-9/]", "", value)
+
+    # více lomítek -> nech první jako oddělovač, zbytek smaž
+    if value.count("/") > 1:
+        parts = value.split("/")
+        value = parts[0] + "/" + "".join(parts[1:])
+
+    return value
+
+
+
+def _normalize_symbol(value: str) -> str:
+    value = str(value).strip()
+    value = re.sub(r"[^0-9]", "", value)
+    return value
+
+
+def clean_value(key, value) -> str:
+    if value is None:
+        return ""
+
+    key = str(key).strip().lower()
+    value = str(value).strip()
+
+    if not value:
+        return ""
+
+    if key == "bic":
+        return _normalize_lower_alnum(value)
+
+    if key == "iban":
+        return _normalize_lower_alnum(value)
+
+    if key == "total":
+        return _normalize_total(value)
+
+    if key in {"cust_tax_id", "supp_tax_id"}:
+        return _normalize_tax_id(value)
+
+    if key in {"cust_register_id", "supp_register_id"}:
+        return _normalize_register_id(value)
+
+    if key in {"due_date", "issue_date", "taxable_supply_date"}:
+        return _normalize_date(value)
+
+    if key in {"const_symbol"}:
+        return _normalize_symbol(value)
+
+    if key == "bank_account_number":
+        return _normalize_bank_account(value)
+
+    return value.strip().lower()
+
+def clean_date(key, value):
+    if key in {"due_date", "issue_date", "taxable_supply_date"}:
+        return _normalize_date(value)
+    
+    return value.strip().lower()
+
+
 #zkopírováno z repozitáře clovai/donut a lehce modifikováno
 def flatten(data: dict):
         """
@@ -103,7 +246,7 @@ def normalize_text(x):
     return x
 
 #zkopírováno z repozitáře clovai/donut a lehce modifikováno
-def normalize_dict(data: Union[Dict, List, Any]):
+def normalize_dict(data: Union[Dict, List, Any], train:bool = False):
         """
         Sort by value, while iterate over element if data is list
         """
@@ -116,8 +259,11 @@ def normalize_dict(data: Union[Dict, List, Any]):
                 value = normalize_dict(data[key])
                 if not isinstance(value, list):
                   value = [value]
-                new_data[key] = normalize_text(value)
-
+                if train:
+                    new_data[key] = clean_value(key, normalize_text(value))
+                else:
+                    new_data[key] = clean_date(key, normalize_text(value))
+                    
         elif isinstance(data, list):
             if all(isinstance(item, dict) for item in data):
                 new_data = []
