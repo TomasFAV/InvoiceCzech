@@ -1,0 +1,8 @@
+Název práce: Metody extrakce informací pro analýzu faktur
+
+Cíle práce:
+
+Cílem projektu bude prozkoumat současné přístupy pro vytěžování dat, od metod počítačového vidění (Object Detection) 
+přes modely s podporou layoutu (Layout-aware NLP) až po generativní multimodální modely.
+V rámci práce bude provedena komparativní analýza jednotlivých přístupů na testovacím datasetu a zhodnocení jejich silných a
+slabých stránek v kontextu zpracování faktur a podobných dokumentů.

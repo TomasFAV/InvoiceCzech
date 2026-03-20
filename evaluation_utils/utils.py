@@ -1,0 +1,391 @@
+from zss import Node
+import zss
+from nltk import edit_distance
+
+
+########################pomocné metody#############################
+
+import re
+
+def token2json(tokens, is_inner_value=False):
+    output = {}
+    # Matches <s_tag>content</s_tag>
+    pattern = r"<s_(?P<key>[^>]+)>(?P<value>.*?)<\s*/\s*s_(?P=key)>"
+
+    matches = list(re.finditer(pattern, tokens, re.DOTALL | re.IGNORECASE))
+
+    if not matches:
+        # If no tags, treat as leaf node or raw text
+        return tokens.strip()
+
+    for match in matches:
+        key = match.group("key")
+        value_str = match.group("value").strip()
+
+        # Recursive step for nested tags
+        if "<s_" in value_str:
+            value = token2json(value_str, is_inner_value=True)
+        else:
+            # Handle list splitting by <sep/>
+            parts = [v.strip() for v in value_str.split("<sep/>") if v.strip()]
+            value = parts[0] if len(parts) == 1 else parts
+
+        # Grouping logic for repeating keys
+        if key in output:
+            if isinstance(output[key], list):
+                output[key].append(value)
+            else:
+                output[key] = [output[key], value]
+        else:
+            output[key] = value
+
+    return output if output else tokens
+
+from typing import Any, Dict, List, Tuple, Union
+
+#zkopírováno z repozitáře clovai/donut a lehce modifikováno
+def flatten(data: dict):
+        """
+        Convert Dictionary into Non-nested Dictionary
+        Example:
+            input(dict)
+                {
+                    "menu": [
+                        {"name" : ["cake"], "count" : ["2"]},
+                        {"name" : ["juice"], "count" : ["1"]},
+                    ]
+                }
+            output(list)
+                [
+                    ("menu.name", "cake"),
+                    ("menu.count", "2"),
+                    ("menu.name", "juice"),
+                    ("menu.count", "1"),
+                ]
+        """
+        flatten_data = list()
+
+        def _flatten(value, key=""):
+            if type(value) is dict:
+                for child_key, child_value in value.items():
+                    _flatten(child_value, f"{key}.{child_key}" if key else child_key)
+                if len(value.items()) == 0:
+                    flatten_data.append((key, ""))
+            elif type(value) is list:
+                for value_item in value:
+                    _flatten(value_item, key)
+                if(len(value) == 0):
+                    flatten_data.append((key, ""))
+            else:
+                flatten_data.append((key, value))
+
+        _flatten(data)
+        return flatten_data
+
+#zkopírováno z repozitáře clovai/donut a lehce modifikováno
+def normalize_dict(data: Union[Dict, List, Any]):
+        """
+        Sort by value, while iterate over element if data is list
+        """
+        if not data:
+            return {}
+
+        if isinstance(data, dict):
+            new_data = dict()
+            for key in sorted(data.keys(), key=lambda k: (len(k), k)):
+                value = normalize_dict(data[key])
+                if not isinstance(value, list):
+                  value = [value]
+                new_data[key] = value
+
+        elif isinstance(data, list):
+            if all(isinstance(item, dict) for item in data):
+                new_data = []
+                for item in data:
+                    item = normalize_dict(item)
+                    if item:
+                        new_data.append(item)
+            else:
+                new_data = [str(item).strip().lower() for item in data if type(item) in {str, int, float} and str(item).strip().lower()]
+        else:
+            try:
+              new_data = str(float(str(data).strip().lower().replace(",",".")))
+            except ValueError:
+              new_data = [str(data).strip().lower()]
+
+        return new_data
+
+##################################### Pro výpočet accuracy###############################################
+
+#zkopírováno z repozitáře clovai/donut
+def update_cost(node1: Node, node2: Node):
+        """
+        Update cost for tree edit distance.
+        If both are leaf node, calculate string edit distance between two labels (special token '<leaf>' will be ignored).
+        If one of them is leaf node, cost is length of string in leaf node + 1.
+        If neither are leaf node, cost is 0 if label1 is same with label2 othewise 1
+        """
+        label1 = node1.label
+        label2 = node2.label
+        label1_leaf = "<leaf>" in label1
+        label2_leaf = "<leaf>" in label2
+        if label1_leaf == True and label2_leaf == True:
+            return edit_distance(label1.replace("<leaf>", ""), label2.replace("<leaf>", ""))
+        elif label1_leaf == False and label2_leaf == True:
+            return 1 + len(label2.replace("<leaf>", ""))
+        elif label1_leaf == True and label2_leaf == False:
+            return 1 + len(label1.replace("<leaf>", ""))
+        else:
+            return int(label1 != label2)
+
+#zkopírováno z repozitáře clovai/donut
+def insert_and_remove_cost(node: Node):
+        """
+        Insert and remove cost for tree edit distance.
+        If leaf node, cost is length of label name.
+        Otherwise, 1
+        """
+        label = node.label
+        if "<leaf>" in label:
+            return len(label.replace("<leaf>", ""))
+        else:
+            return 1
+        
+#zkopírováno z repozitáře clovai/donut
+def construct_tree_from_dict(data: Union[Dict, List], node_name: str = None):
+        """
+        Convert Dictionary into Tree
+
+        Example:
+            input(dict)
+
+                {
+                    "menu": [
+                        {"name" : ["cake"], "count" : ["2"]},
+                        {"name" : ["juice"], "count" : ["1"]},
+                    ]
+                }
+
+            output(tree)
+                                     <root>
+                                       |
+                                     menu
+                                    /    \
+                             <subtree>  <subtree>
+                            /      |     |      \
+                         name    count  name    count
+                        /         |     |         \
+                  <leaf>cake  <leaf>2  <leaf>juice  <leaf>1
+         """
+        if node_name is None:
+            node_name = "<root>"
+
+        node = Node(node_name)
+
+        if isinstance(data, dict):
+            for key, value in data.items():
+                kid_node = construct_tree_from_dict(value, key)
+                node.addkid(kid_node)
+        elif isinstance(data, list):
+            if all(isinstance(item, dict) for item in data):
+                for item in data:
+                    kid_node = construct_tree_from_dict(
+                        item,
+                        "<subtree>",
+                    )
+                    node.addkid(kid_node)
+            else:
+                for item in data:
+                    node.addkid(Node(f"<leaf>{item}"))
+        else:
+            raise Exception(data, node_name)
+        return node
+
+############################################GRAFY###########################################
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+def plot_field_level_f1(field_accuracy: dict):
+    # připrav data
+    data = [
+        (field, correct / total, total)
+        for field, (correct, total) in field_accuracy.items()
+        if total > 0
+    ]
+
+    # seřadit podle accuracy (nejhorší nahoře → lepší pro debug)
+    data = sorted(data, key=lambda x: x[1])
+
+    fields, accuracies, _ = zip(*data)
+
+    # plot
+    plt.figure()
+    plt.barh(fields, accuracies)
+
+    # osa a grid
+    plt.xlim(0, 1)
+    plt.xticks(np.arange(0, 1.1, 0.1))
+    plt.grid(axis="x", linestyle="--", alpha=0.5)
+
+    plt.xlabel("Accuracy")
+    plt.title("Field-level Accuracy")
+
+    plt.tight_layout()
+    plt.show()
+
+##########################################METRIKY###############################################
+
+#zkopírováno z repozitáře clovai/donut
+def cal_f1(preds: List[dict], answers: List[dict]):
+        """
+        Calculate global F1 accuracy score (field-level, micro-averaged) by counting all true positives, false negatives and false positives
+        """
+        total_tp, total_fn_or_fp = 0, 0
+        for pred, answer in zip(preds, answers):
+            pred, answer = flatten(normalize_dict(pred)), flatten(normalize_dict(answer))
+            for field in pred:
+                if field in answer:
+                    total_tp += 1
+                    answer.remove(field)
+                else:
+                    total_fn_or_fp += 1
+            total_fn_or_fp += len(answer)
+        return total_tp / (total_tp + total_fn_or_fp / 2)
+
+
+from collections import defaultdict
+
+def field_level_f1(preds: List[dict], answers: List[dict]):
+        """
+        Calculate global F1 accuracy score (field-level, micro-averaged) by counting all true positives, false negatives and false positives
+        """
+        field_accuracy = defaultdict(lambda: (0.0, 0.0))
+        field_errors = defaultdict(list)
+
+        total_tp, total_fn_or_fp = 0, 0
+        for pred, answer in zip(preds, answers):
+            pred, answer = flatten(normalize_dict(pred)), flatten(normalize_dict(answer))
+            for field in answer:
+                if field in pred:
+                    field_accuracy[field[0]] = (field_accuracy[field[0]][0]+1, field_accuracy[field[0]][1]+1)
+                else:
+                    field_accuracy[field[0]] = (field_accuracy[field[0]][0], field_accuracy[field[0]][1]+1)
+
+        return field_accuracy
+
+#zkopírováno z repozitáře clovai/donut
+def cal_acc(pred: dict, answer: dict):
+        """
+        Calculate normalized tree edit distance(nTED) based accuracy.
+        1) Construct tree from dict,
+        2) Get tree distance with insert/remove/update cost,
+        3) Divide distance with GT tree size (i.e., nTED),
+        4) Calculate nTED based accuracy. (= max(1 - nTED, 0 ).
+        """
+        pred = construct_tree_from_dict(normalize_dict(pred))
+        answer = construct_tree_from_dict(normalize_dict(answer))
+        return max(
+            0,
+            1
+            - (
+                zss.distance(
+                    pred,
+                    answer,
+                    get_children=zss.Node.get_children,
+                    insert_cost=insert_and_remove_cost,
+                    remove_cost=insert_and_remove_cost,
+                    update_cost=update_cost,
+                    return_operations=False,
+                )
+                / zss.distance(
+                    construct_tree_from_dict(normalize_dict({})),
+                    answer,
+                    get_children=zss.Node.get_children,
+                    insert_cost=insert_and_remove_cost,
+                    remove_cost=insert_and_remove_cost,
+                    update_cost=update_cost,
+                    return_operations=False,
+                )
+            ),
+        )
+
+
+def cal_precision(preds: List[dict], answers: List[dict]):
+        """
+        Calculate global precision score (field-level, micro-averaged) by counting all true positives, false negatives and false positives
+        """
+        total_tp, total_fn, total_fp = 0, 0, 0
+        for pred, answer in zip(preds, answers):
+            pred, answer = flatten(normalize_dict(pred)), flatten(normalize_dict(answer))
+            for field in pred:
+                if field in answer:
+                    total_tp += 1
+                    answer.remove(field)
+                else:
+                  total_fp += 1
+
+
+            total_fn += len(answer)
+        return total_tp / (total_tp + total_fp) if (total_tp + total_fp) > 0 else 1.0
+
+
+def cal_recall(preds: List[dict], answers: List[dict]):
+    total_tp, total_fn = 0, 0
+
+    for pred, answer in zip(preds, answers):
+        pred = flatten(normalize_dict(pred))
+        answer = flatten(normalize_dict(answer))
+
+        for field in pred:
+            if field in answer:
+                total_tp += 1
+                answer.remove(field)
+
+        total_fn += len(answer)
+
+    return total_tp / (total_tp + total_fn) if (total_tp + total_fn) > 0 else 1.0
+
+
+
+import numpy
+
+def compute_metrics(preds: List[dict], answers: List[dict]):
+  document_exact_match = 0
+
+  f1_scores = list()
+
+  micro_f1 = cal_f1(preds, answers)
+  micro_precision = cal_precision(preds, answers)
+  micro_recall = cal_recall(preds, answers)
+
+  mean_acc = 0.0
+  mean_f1 = 0.0
+
+  f1_standard_deviation = 0.0
+
+  for pred_json, gt_json in zip(preds, answers):
+    document_f1 = cal_f1([pred_json], [gt_json])
+    if(document_f1 == 1):
+      document_exact_match += 1
+
+    document_acc = cal_acc(pred_json, gt_json)
+
+    mean_f1 += document_f1
+    mean_acc += document_acc
+
+    f1_scores.append(document_f1)
+
+
+  mean_f1 = mean_f1/len(preds)
+  mean_acc = mean_acc/len(preds)
+  document_exact_match = document_exact_match/len(preds)
+
+  f1_standard_deviation = numpy.std(f1_scores, ddof=1 if len(f1_scores) > 1 else 0)
+
+  f1_P50 = numpy.percentile(f1_scores, 50)
+  f1_P25 = numpy.percentile(f1_scores, 25)
+  f1_P05 = numpy.percentile(f1_scores, 5)
+
+  return {"document_exact_match": document_exact_match, "micro-recall":  micro_recall, "micro-precision": micro_precision,"micro-f1": micro_f1, "macro-f1":mean_f1, "macro-f1-dev": f1_standard_deviation,"macro-f1-P50": f1_P50, "macro-f1-P25": f1_P25, "macro-f1-P05": f1_P05, "macro-f1-min": numpy.min(f1_scores),
+          "accuracy": mean_acc}
