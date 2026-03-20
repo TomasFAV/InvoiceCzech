@@ -256,14 +256,14 @@ def normalize_dict(data: Union[Dict, List, Any], train:bool = False):
         if isinstance(data, dict):
             new_data = dict()
             for key in sorted(data.keys(), key=lambda k: (len(k), k)):
-                value = normalize_dict(data[key])
+                if train:
+                    value = clean_value(key, normalize_text(value))
+                else:
+                    value = clean_date(key, normalize_text(value))
                 if not isinstance(value, list):
                   value = [value]
-                if train:
-                    new_data[key] = clean_value(key, normalize_text(value))
-                else:
-                    new_data[key] = clean_date(key, normalize_text(value))
-                    
+                new_data[key] = value
+
         elif isinstance(data, list):
             if all(isinstance(item, dict) for item in data):
                 new_data = []
