@@ -143,46 +143,50 @@ def _normalize_symbol(value: str) -> str:
     return value
 
 
-def clean_value(key, value) -> str:
+def clean_value(key, value, predictions:bool = False) -> str:
     if value is None:
         return ""
 
     key = str(key).strip().lower()
     value = str(value).strip()
-
-    if not value:
-        return ""
-
-    if key == "bic":
-        return _normalize_lower_alnum(value)
-
-    if key == "iban":
-        return _normalize_lower_alnum(value)
-
-    if key == "total":
-        return _normalize_total(value)
-
-    if key in {"cust_tax_id", "supp_tax_id"}:
-        return _normalize_tax_id(value)
-
-    if key in {"cust_register_id", "supp_register_id"}:
-        return _normalize_register_id(value)
-
-    if key in {"due_date", "issue_date", "taxable_supply_date"}:
-        return _normalize_date(value)
-
-    if key in {"const_symbol"}:
-        return _normalize_symbol(value)
-
-    if key == "bank_account_number":
-        return _normalize_bank_account(value)
-
-    return value.strip().lower()
-
-def clean_date(key, value):
-    if key in {"due_date", "issue_date", "taxable_supply_date"}:
-        return _normalize_date(value)
     
+    if predictions:
+
+        if not value:
+            return ""
+
+        if key == "bic":
+            return _normalize_lower_alnum(value)
+
+        if key == "iban":
+            return _normalize_lower_alnum(value)
+
+        if key == "total":
+            return _normalize_total(value)
+
+        if key in {"cust_tax_id", "supp_tax_id"}:
+            return _normalize_tax_id(value)
+
+        if key in {"cust_register_id", "supp_register_id"}:
+            return _normalize_register_id(value)
+
+        if key in {"due_date", "issue_date", "taxable_supply_date"}:
+            return _normalize_date(value)
+
+        if key in {"const_symbol"}:
+            return _normalize_symbol(value)
+
+        if key == "bank_account_number":
+            return _normalize_bank_account(value)
+    
+    else:
+        
+        if key == "total":
+            return _normalize_total(value)
+
+        if key in {"due_date", "issue_date", "taxable_supply_date"}:
+            return _normalize_date(value)
+
     return value.strip().lower()
 
 
@@ -257,10 +261,10 @@ def normalize_dict(data: Union[Dict, List, Any], predictions:bool = False):
             new_data = dict()
             for key in sorted(data.keys(), key=lambda k: (len(k), k)):
                 if predictions:
-                    value = clean_value(key, normalize_text(data[key]))
+                    value = clean_value(key, normalize_text(data[key]), True)
                 else:
-                    value = clean_date(key, normalize_text(data[key]))
-                    
+                    value = clean_value(key, normalize_text(data[key]))
+
                 new_data[key] = value
 
         elif isinstance(data, list):
