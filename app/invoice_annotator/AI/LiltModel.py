@@ -4,7 +4,7 @@ import numpy as np
 
 class LiltModel:
 
-    def __init__(self, model_path="TomasFAV/LiLTInfoXMLInvoiceCzechV3"):
+    def __init__(self, model_path="TomasFAV/LiLTInvoiceCzechV3"):
         
         self.__device = "cuda" if torch.cuda.is_available() else "cpu"
 

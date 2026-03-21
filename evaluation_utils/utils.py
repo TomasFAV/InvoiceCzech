@@ -1,9 +1,44 @@
+from tkinter import Image
+
+import pytesseract
 from zss import Node
 import zss
 from nltk import edit_distance
 
 
 ########################pomocné metody#############################
+
+def get_ocr_data_for_layoutlm(image: Image.Image, lang: str = "ces"):
+    """
+    Provede OCR a vrátí data připravená pro processor.feature_extractor (LayoutLMv3).
+    """
+    ocr_df = pytesseract.image_to_data(image, lang=lang, output_type=pytesseract.Output.DICT)
+
+    words = []
+    boxes = []
+    width, height = image.size
+
+    for i in range(len(ocr_df["text"])):
+        # Filtrujeme prázdné řetězce a whitespace
+        word = ocr_df["text"][i].strip()
+        if word != "":
+            words.append(word)
+
+            # Tesseract dává: left, top, width, height
+            x, y, w, h = ocr_df["left"][i], ocr_df["top"][i], ocr_df["width"][i], ocr_df["height"][i]
+
+            # Normalizace na rozsah 0-1000 pro LayoutLMv3
+            # x1, y1 (vlevo nahoře), x2, y2 (vpravo dole)
+            normalized_box = [
+                int(1000 * (x / width)),
+                int(1000 * (y / height)),
+                int(1000 * ((x + w) / width)),
+                int(1000 * ((y + h) / height))
+            ]
+            boxes.append(normalized_box)
+
+    return words, boxes
+
 
 import re
 
@@ -260,11 +295,7 @@ def normalize_dict(data: Union[Dict, List, Any], predictions:bool = False):
         if isinstance(data, dict):
             new_data = dict()
             for key in sorted(data.keys(), key=lambda k: (len(k), k)):
-                if predictions:
-                    value = clean_value(key, normalize_text(data[key]), True)
-                else:
-                    value = clean_value(key, normalize_text(data[key]))
-
+                value = clean_value(key, normalize_text(data[key]), predictions)
                 new_data[key] = value
 
         elif isinstance(data, list):
