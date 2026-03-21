@@ -456,7 +456,7 @@ def cal_f1(preds: List[dict], answers: List[dict], min_ned:float = 1.0):
             for pred_field in pred:
                 total_fn_or_fp += 1 #pro případ, když nenajdu hodnotu v ground-truth
                 for answ_field in answer:
-                    if(answ_field[0] == pred_field[0] and ned(pred_field[0], answ_field[0]) >= min_ned):
+                    if(answ_field[0] == pred_field[0] and ned(pred_field[1], answ_field[1]) >= min_ned):
                         total_tp += 1
                         total_fn_or_fp -= 1 #našel jsem v gt takže musím vrátit zpět
                         answer.remove(answ_field)
