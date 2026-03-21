@@ -82,7 +82,7 @@ def ned(s1:str, s2:str)->float:
     Vrací normal edit distance
     """
     max_len = max(len(s1), len(s2))
-    return (edit_distance(s1, s2)/max_len) if max_len != 0 else 1
+    return (edit_distance(s1, s2)/max_len) if max_len != 0 else 0
 
 #################################################čištění hodnot#######################################################
 import re
