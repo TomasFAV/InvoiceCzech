@@ -5,7 +5,7 @@ from nltk import edit_distance
 import pytesseract
 
 
-########################pomocné metody#############################
+########################pomocné metody pro evaluaci v google collab#############################
 
 def get_ocr_data_for_layoutlm(image: Image.Image, lang: str = "ces"):
     """
@@ -555,6 +555,28 @@ def cal_recall(preds: List[dict], answers: List[dict]):
 
     return total_tp / (total_tp + total_fn) if (total_tp + total_fn) > 0 else 1.0
 
+def cal_ned(preds: List[dict], answers: List[dict]):
+    ned = 0.0
+    values_count = 0
+
+    for pred, answer in zip(preds, answers):
+        pred = flatten(normalize_dict(pred, True))
+        answer = flatten(normalize_dict(answer))
+
+        for answ_field in answer:
+            key = answ_field[0]
+
+            field_ned = 0.0
+
+            for pred_field in pred:
+                if(key == pred_field[0]):
+                    field_ned += edit_distance(pred_field[1], answ_field[1])/max(len(pred_field[1], answ_field[1]))
+                    break
+            
+            ned += field_ned if field_ned != 0 else 1
+            values_count += 1
+
+    return ned/values_count
 
 
 import numpy
@@ -570,9 +592,11 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
   micro_f1 = cal_f1(preds, answers)
   micro_precision = cal_precision(preds, answers)
   micro_recall = cal_recall(preds, answers)
+  micro_ned = cal_ned(preds, answers)
 
   mean_acc = 0.0
-  mean_f1 = 0.0
+  mean_f1 = 0.0 
+  mean_ned = 0.0
 
   f1_standard_deviation = 0.0
 
@@ -585,12 +609,14 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
 
     mean_f1 += document_f1
     mean_acc += document_acc
+    mean_ned += cal_ned([pred_json], [gt_json])
 
     f1_scores.append(document_f1)
 
 
   mean_f1 = mean_f1/len(preds)
   mean_acc = mean_acc/len(preds)
+  mean_ned = mean_ned/len(preds)
   document_exact_match = document_exact_match/len(preds)
 
   f1_standard_deviation = numpy.std(f1_scores, ddof=1 if len(f1_scores) > 1 else 0)
@@ -599,5 +625,5 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
   f1_P25 = numpy.percentile(f1_scores, 25)
   f1_P05 = numpy.percentile(f1_scores, 5)
 
-  return {"document_exact_match": document_exact_match, "micro-recall":  micro_recall, "micro-precision": micro_precision,"micro-f1": micro_f1, "macro-f1":mean_f1, "macro-f1-dev": f1_standard_deviation,"macro-f1-P50": f1_P50, "macro-f1-P25": f1_P25, "macro-f1-P05": f1_P05, "macro-f1-min": numpy.min(f1_scores),
+  return {"document_exact_match": document_exact_match, "micro-ned": micro_ned, "micro-recall":  micro_recall, "micro-precision": micro_precision,"micro-f1": micro_f1, "macro-f1":mean_f1, "macro-f1-dev": f1_standard_deviation,"macro-f1-P50": f1_P50, "macro-f1-P25": f1_P25, "macro-f1-P05": f1_P05, "macro-f1-min": numpy.min(f1_scores),
           "accuracy": mean_acc}
