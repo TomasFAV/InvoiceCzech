@@ -629,7 +629,7 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
 
 
   mean_f1 = mean_f1/len(preds)
-  mean_f1_05 = mean_f1_05/len(preds)
+  mean_f1_1 = mean_f1_1/len(preds)
   mean_acc = mean_acc/len(preds)
   mean_ned = mean_ned/len(preds)
   document_exact_match = document_exact_match/len(preds)
