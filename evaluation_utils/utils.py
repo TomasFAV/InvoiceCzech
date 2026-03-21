@@ -600,7 +600,7 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
   answers = normalize_dict(answers, False)
 
   micro_f1 = cal_f1(preds, answers)
-  micro_f1_05 = cal_f1(preds, answers, 0.05)
+  micro_f1_1 = cal_f1(preds, answers, 0.1)
   micro_precision = cal_precision(preds, answers)
   micro_recall = cal_recall(preds, answers)
   micro_ned = cal_ned(preds, answers)
@@ -614,14 +614,14 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
 
   for pred_json, gt_json in zip(preds, answers):
     document_f1 = cal_f1([pred_json], [gt_json])
-    document_f1_05 = cal_f1([pred_json], [gt_json], 0.05)
+    document_f1_1 = cal_f1([pred_json], [gt_json], 0.1)
     if(document_f1 == 1):
       document_exact_match += 1
 
     document_acc = cal_acc(pred_json, gt_json)
 
     mean_f1 += document_f1
-    mean_f1_05 += document_f1_05
+    mean_f1_1 += document_f1_1
     mean_acc += document_acc
     mean_ned += cal_ned([pred_json], [gt_json])
 
@@ -641,4 +641,4 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
   f1_P05 = numpy.percentile(f1_scores, 5)
 
   return {"document_exact_match": document_exact_match, "micro-ned": micro_ned, "micro-recall":  micro_recall, "micro-precision": micro_precision,"micro-f1": micro_f1, "macro-ned":mean_ned, "macro-f1":mean_f1, "macro-f1-dev": f1_standard_deviation,"macro-f1-P50": f1_P50, "macro-f1-P25": f1_P25, "macro-f1-P05": f1_P05, "macro-f1-min": numpy.min(f1_scores),
-          "accuracy": mean_acc, "fuzzy-micro-f1": micro_f1_05, "fuzzy-macro-f1": mean_f1_05}
+          "accuracy": mean_acc, "fuzzy-micro-f1": micro_f1_1, "fuzzy-macro-f1": mean_f1_1}
