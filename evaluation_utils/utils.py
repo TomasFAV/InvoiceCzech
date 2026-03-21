@@ -81,7 +81,7 @@ def ned(s1:str, s2:str)->float:
     """
     Vrací normal edit distance
     """
-    return edit_distance(s1, s2)/max(len(s1, s2))
+    return edit_distance(s1, s2)/max(len(s1), len(s2))
 
 #################################################čištění hodnot#######################################################
 import re
@@ -565,7 +565,7 @@ def cal_recall(preds: List[dict], answers: List[dict]):
     return total_tp / (total_tp + total_fn) if (total_tp + total_fn) > 0 else 1.0
 
 def cal_ned(preds: List[dict], answers: List[dict]):
-    ned = 0.0
+    ned_val = 0.0
     values_count = 0
 
     for pred, answer in zip(preds, answers):
@@ -582,10 +582,10 @@ def cal_ned(preds: List[dict], answers: List[dict]):
                     field_ned += ned(pred_field[1], answ_field[1])
                     break
             
-            ned += field_ned if field_ned != 0 else 1
+            ned_val += field_ned if field_ned != 0 else 1
             values_count += 1
 
-    return ned/values_count
+    return ned_val/values_count
 
 
 import numpy
