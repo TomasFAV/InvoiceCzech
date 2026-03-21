@@ -427,18 +427,26 @@ def field_level_f1(preds: List[dict], answers: List[dict]):
         Calculate global F1 accuracy score (field-level, micro-averaged) by counting all true positives, false negatives and false positives
         """
         field_accuracy = defaultdict(lambda: (0.0, 0.0))
-        field_errors = defaultdict(list)
+        field_errors = defaultdict(list) #obsahuje list dvojic predikce, ground_truth
 
         total_tp, total_fn_or_fp = 0, 0
         for pred, answer in zip(preds, answers):
             pred, answer = flatten(normalize_dict(pred)), flatten(normalize_dict(answer))
-            for field in answer:
-                if field in pred:
-                    field_accuracy[field[0]] = (field_accuracy[field[0]][0]+1, field_accuracy[field[0]][1]+1)
-                else:
-                    field_accuracy[field[0]] = (field_accuracy[field[0]][0], field_accuracy[field[0]][1]+1)
+            for answ_field in answer:
+                key:str = answ_field[0]
 
-        return field_accuracy
+                if answ_field in pred:
+                    field_accuracy[key] = (field_accuracy[key][0]+1, field_accuracy[key][1]+1)
+                else:
+                    field_accuracy[key] = (field_accuracy[key][0], field_accuracy[key][1]+1)
+
+                    for pred_field in pred:
+                        if(pred_field[0] == key):
+
+                            field_errors[key].append((pred_field[1], answ_field[1]))
+
+
+        return field_accuracy, field_errors
 
 #zkopírováno z repozitáře clovai/donut
 def cal_acc(pred: dict, answer: dict):
