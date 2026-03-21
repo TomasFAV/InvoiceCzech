@@ -625,5 +625,5 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
   f1_P25 = numpy.percentile(f1_scores, 25)
   f1_P05 = numpy.percentile(f1_scores, 5)
 
-  return {"document_exact_match": document_exact_match, "micro-ned": micro_ned, "micro-recall":  micro_recall, "micro-precision": micro_precision,"micro-f1": micro_f1, "macro-f1":mean_f1, "macro-f1-dev": f1_standard_deviation,"macro-f1-P50": f1_P50, "macro-f1-P25": f1_P25, "macro-f1-P05": f1_P05, "macro-f1-min": numpy.min(f1_scores),
+  return {"document_exact_match": document_exact_match, "micro-ned": micro_ned, "micro-recall":  micro_recall, "micro-precision": micro_precision,"micro-f1": micro_f1, "macro-ned":mean_ned, "macro-f1":mean_f1, "macro-f1-dev": f1_standard_deviation,"macro-f1-P50": f1_P50, "macro-f1-P25": f1_P25, "macro-f1-P05": f1_P05, "macro-f1-min": numpy.min(f1_scores),
           "accuracy": mean_acc}
