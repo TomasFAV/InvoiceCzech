@@ -607,6 +607,7 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
 
   mean_acc = 0.0
   mean_f1 = 0.0 
+  mean_f1_9 = 0.0
   mean_ned = 0.0
 
   f1_standard_deviation = 0.0
