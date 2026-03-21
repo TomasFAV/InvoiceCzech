@@ -1,10 +1,11 @@
-from PIL import Image
-
-import pytesseract
-from zss import Node
-import zss
-from nltk import edit_distance
-
+try:
+    import pytesseract
+    from PIL import Image
+    from zss import Node
+    import zss
+    from nltk import edit_distance
+except:
+    ...
 
 ########################pomocné metody#############################
 
