@@ -246,7 +246,7 @@ def normalize_text(x):
     return x
 
 #zkopírováno z repozitáře clovai/donut a lehce modifikováno
-def normalize_dict(data: Union[Dict, List, Any], train:bool = False):
+def normalize_dict(data: Union[Dict, List, Any], predictions:bool = False):
         """
         Sort by value, while iterate over element if data is list
         """
@@ -256,19 +256,19 @@ def normalize_dict(data: Union[Dict, List, Any], train:bool = False):
         if isinstance(data, dict):
             new_data = dict()
             for key in sorted(data.keys(), key=lambda k: (len(k), k)):
-                if train:
+                if predictions:
                     value = clean_value(key, normalize_text(data[key]))
                 else:
                     value = clean_date(key, normalize_text(data[key]))
-                if not isinstance(value, list):
-                  value = [value]
+                #if not isinstance(value, list):
+                #  value = [value]
                 new_data[key] = value
 
         elif isinstance(data, list):
             if all(isinstance(item, dict) for item in data):
                 new_data = []
                 for item in data:
-                    item = normalize_dict(item, train)
+                    item = normalize_dict(item, predictions)
                     if item:
                         new_data.append(item)
             else:
@@ -409,7 +409,7 @@ def cal_f1(preds: List[dict], answers: List[dict]):
         """
         total_tp, total_fn_or_fp = 0, 0
         for pred, answer in zip(preds, answers):
-            pred, answer = flatten(normalize_dict(pred)), flatten(normalize_dict(answer))
+            pred, answer = flatten(normalize_dict(pred, True)), flatten(normalize_dict(answer))
             for field in pred:
                 if field in answer:
                     total_tp += 1
@@ -429,9 +429,8 @@ def field_level_f1(preds: List[dict], answers: List[dict]):
         field_accuracy = defaultdict(lambda: (0.0, 0.0))
         field_errors = defaultdict(list) #obsahuje list dvojic predikce, ground_truth
 
-        total_tp, total_fn_or_fp = 0, 0
         for pred, answer in zip(preds, answers):
-            pred, answer = flatten(normalize_dict(pred)), flatten(normalize_dict(answer))
+            pred, answer = flatten(normalize_dict(pred, True)), flatten(normalize_dict(answer))
             for answ_field in answer:
                 key:str = answ_field[0]
 
@@ -457,7 +456,7 @@ def cal_acc(pred: dict, answer: dict):
         3) Divide distance with GT tree size (i.e., nTED),
         4) Calculate nTED based accuracy. (= max(1 - nTED, 0 ).
         """
-        pred = construct_tree_from_dict(normalize_dict(pred))
+        pred = construct_tree_from_dict(normalize_dict(pred, True))
         answer = construct_tree_from_dict(normalize_dict(answer))
         return max(
             0,
@@ -491,7 +490,7 @@ def cal_precision(preds: List[dict], answers: List[dict]):
         """
         total_tp, total_fn, total_fp = 0, 0, 0
         for pred, answer in zip(preds, answers):
-            pred, answer = flatten(normalize_dict(pred)), flatten(normalize_dict(answer))
+            pred, answer = flatten(normalize_dict(pred, True)), flatten(normalize_dict(answer))
             for field in pred:
                 if field in answer:
                     total_tp += 1
@@ -508,7 +507,7 @@ def cal_recall(preds: List[dict], answers: List[dict]):
     total_tp, total_fn = 0, 0
 
     for pred, answer in zip(preds, answers):
-        pred = flatten(normalize_dict(pred))
+        pred = flatten(normalize_dict(pred, True))
         answer = flatten(normalize_dict(answer))
 
         for field in pred:
