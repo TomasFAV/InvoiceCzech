@@ -446,7 +446,7 @@ def plot_field_level_f1(field_accuracy: dict):
 ##########################################METRIKY###############################################
 
 #zkopírováno z repozitáře clovai/donut
-def cal_f1(preds: List[dict], answers: List[dict], min_ned:float = 1.0):
+def cal_f1(preds: List[dict], answers: List[dict], max_ned:float = 0.0):
         """
         Calculate global F1 accuracy score (field-level, micro-averaged) by counting all true positives, false negatives and false positives
         """
@@ -456,7 +456,7 @@ def cal_f1(preds: List[dict], answers: List[dict], min_ned:float = 1.0):
             for pred_field in pred:
                 total_fn_or_fp += 1 #pro případ, když nenajdu hodnotu v ground-truth
                 for answ_field in answer:
-                    if(answ_field[0] == pred_field[0] and ned(pred_field[1], answ_field[1]) >= min_ned):
+                    if(answ_field[0] == pred_field[0] and ned(pred_field[1], answ_field[1]) <= max_ned):
                         total_tp += 1
                         total_fn_or_fp -= 1 #našel jsem v gt takže musím vrátit zpět
                         answer.remove(answ_field)
@@ -600,28 +600,28 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
   answers = normalize_dict(answers, False)
 
   micro_f1 = cal_f1(preds, answers)
-  micro_f1_9 = cal_f1(preds, answers, 0.9)
+  micro_f1_05 = cal_f1(preds, answers, 0.05)
   micro_precision = cal_precision(preds, answers)
   micro_recall = cal_recall(preds, answers)
   micro_ned = cal_ned(preds, answers)
 
   mean_acc = 0.0
   mean_f1 = 0.0 
-  mean_f1_9 = 0.0
+  mean_f1_05 = 0.0
   mean_ned = 0.0
 
   f1_standard_deviation = 0.0
 
   for pred_json, gt_json in zip(preds, answers):
     document_f1 = cal_f1([pred_json], [gt_json])
-    document_f1_9 = cal_f1([pred_json], [gt_json], 0.9)
+    document_f1_05 = cal_f1([pred_json], [gt_json], 0.05)
     if(document_f1 == 1):
       document_exact_match += 1
 
     document_acc = cal_acc(pred_json, gt_json)
 
     mean_f1 += document_f1
-    mean_f1_9 += document_f1_9
+    mean_f1_05 += document_f1_05
     mean_acc += document_acc
     mean_ned += cal_ned([pred_json], [gt_json])
 
@@ -629,7 +629,7 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
 
 
   mean_f1 = mean_f1/len(preds)
-  mean_f1_9 = mean_f1_9/len(preds)
+  mean_f1_05 = mean_f1_05/len(preds)
   mean_acc = mean_acc/len(preds)
   mean_ned = mean_ned/len(preds)
   document_exact_match = document_exact_match/len(preds)
@@ -641,4 +641,4 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
   f1_P05 = numpy.percentile(f1_scores, 5)
 
   return {"document_exact_match": document_exact_match, "micro-ned": micro_ned, "micro-recall":  micro_recall, "micro-precision": micro_precision,"micro-f1": micro_f1, "macro-ned":mean_ned, "macro-f1":mean_f1, "macro-f1-dev": f1_standard_deviation,"macro-f1-P50": f1_P50, "macro-f1-P25": f1_P25, "macro-f1-P05": f1_P05, "macro-f1-min": numpy.min(f1_scores),
-          "accuracy": mean_acc, "fuzzy-micro-f1": micro_f1_9, "fuzzy-macro-f1": mean_f1_9}
+          "accuracy": mean_acc, "fuzzy-micro-f1": micro_f1_05, "fuzzy-macro-f1": mean_f1_05}
