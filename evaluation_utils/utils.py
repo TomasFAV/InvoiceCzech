@@ -260,8 +260,7 @@ def normalize_dict(data: Union[Dict, List, Any], predictions:bool = False):
                     value = clean_value(key, normalize_text(data[key]))
                 else:
                     value = clean_date(key, normalize_text(data[key]))
-                #if not isinstance(value, list):
-                #  value = [value]
+                    
                 new_data[key] = value
 
         elif isinstance(data, list):
@@ -277,7 +276,7 @@ def normalize_dict(data: Union[Dict, List, Any], predictions:bool = False):
             try:
               new_data = normalize_text(str(data))
             except ValueError:
-              new_data = [normalize_text(data)]
+              new_data = normalize_text(data)
 
         return new_data
 
@@ -363,6 +362,9 @@ def construct_tree_from_dict(data: Union[Dict, List], node_name: str = None):
             else:
                 for item in data:
                     node.addkid(Node(f"<leaf>{item}"))
+        #aby normalize dict nemusel vracet jenom listy
+        elif isinstance(data, str):
+            node.addkid(Node(f"<leaf>{data}"))
         else:
             raise Exception(data, node_name)
         return node
