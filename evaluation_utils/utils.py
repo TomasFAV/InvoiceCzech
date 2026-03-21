@@ -580,7 +580,7 @@ def cal_ned(preds: List[dict], answers: List[dict]):
 
             for pred_field in pred:
                 if(key == pred_field[0]):
-                    field_ned += ned(pred_field[1], answ_field[1])
+                    field_ned = ned(pred_field[1], answ_field[1])
                     break
             
             ned_val += field_ned
