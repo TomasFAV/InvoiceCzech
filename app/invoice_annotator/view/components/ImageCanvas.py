@@ -5,10 +5,14 @@ from typing import Callable, Optional
 from PIL import Image, ImageTk
 from click import command
 from httpx import delete
-from numpy import double
+from networkx import draw
+from numpy import double, isin
 import scipy as sp
 from sympy import false, true
 
+from invoice_annotator.utils.GSegment import GSegment
+from invoice_annotator.utils.GSpan import GSpan
+from invoice_annotator.utils.GToken import GToken
 from invoices_generator.core.enumerates.segment_tags import segment_tags
 from invoice_annotator.enumerates.ContextMenuOptions import ContextMenuOptions
 from invoice_annotator.AppData import AppData
@@ -31,7 +35,7 @@ class ImageCanvas(tk.Frame):
 
     def __init__(self, master, *, on_left_click: Optional[Callable[[tuple[int, int]], None]] = None,
         on_middle_click: Optional[Callable[[tuple[int, int]], None]] = None, on_right_click: Optional[Callable[[tuple[int, int], tuple[int, int], EventSource], None]] = None,
-        root):
+        root=None, on_create_token=None):
 
         super().__init__(master)
         self.root = root
@@ -52,6 +56,23 @@ class ImageCanvas(tk.Frame):
         tk.Scale(toolbar,variable=self.slider_value, from_ = 0, to = 2000,  orient = tk.HORIZONTAL, command=self._sync_visibility,).pack(side=tk.LEFT, padx=(32, 0))
 
         toolbar.pack(fill=tk.X)
+
+        #proměnné související s zoomem, pohybem obrázku canvasu
+        self.img_path: None|str = None
+        self.base_img_scale:float = 1.0
+        self.image_zoom: float = 1.0
+        self.scaled_img_width:None|float = None
+        self.scaled_img_height:None|float = None
+
+        self.image_position: tuple[float, float] = (0,0)
+
+        self.last_mouse_click_position:tuple[float, float]|None = None
+        self.context_menu_clicked_option:ContextMenuOptions = ContextMenuOptions.OTHER
+
+        #####
+        self._create_start_canvas: tuple[int, int] | None = None
+        self._current_mouse_canvas: tuple[int, int] | None = None
+        self._on_create_token = on_create_token
 
         # --- Canvas ---
         self.canvas = tk.Canvas(self, background="#ffffff", highlightthickness=0)
@@ -91,13 +112,13 @@ class ImageCanvas(tk.Frame):
 
     # ---------- veřejné API ----------
 
-    def display_img(self, img_path: str) -> None:
+    def display_img(self, img_path: None|str) -> None:
         self.canvas.delete(tk.ALL)
 
         if not img_path:
             return
 
-        AppData.img_path = img_path
+        self.img_path = img_path
 
         self._img_orig = Image.open(img_path).convert("RGB")
 
@@ -107,8 +128,8 @@ class ImageCanvas(tk.Frame):
         AppData.canvas_height = c_h
 
         base_scale = min(c_w / self._img_orig.width, c_h / self._img_orig.height)
-        AppData.canvas_img_scale = base_scale
-        scale = base_scale * AppData.zoom
+        self.base_img_scale = base_scale
+        scale = base_scale * self.image_zoom
 
         disp = self._img_orig.resize(
             (int(self._img_orig.width * scale), int(self._img_orig.height * scale)),
@@ -116,144 +137,81 @@ class ImageCanvas(tk.Frame):
         )
         self._img_tk = ImageTk.PhotoImage(disp)
 
-        AppData.scaled_img_width = disp.width
-        AppData.scaled_img_height = disp.height
+        self.scaled_img_width = disp.width
+        self.scaled_img_height = disp.height
 
         # aktuální x0, y0 jen lokálně
-        x0 = (c_w - disp.width) // 2 + int(AppData.position[0])
-        y0 = (c_h - disp.height) // 2 + int(AppData.position[1])
+        x0 = (c_w - disp.width) // 2 + int(self.image_position[0])
+        y0 = (c_h - disp.height) // 2 + int(self.image_position[1])
 
         self.canvas.create_image(x0, y0, anchor="nw", image=self._img_tk, tags=(SCAN_IMAGE,))
+
+    def display_bounding_box(self, drawable:GSpan|GToken|GSegment):
+        
+        if(not isinstance(drawable, GSpan) and not isinstance(drawable, GToken) and not isinstance(drawable, GSegment)):
+            return
+
+        scale = self.base_img_scale * self.image_zoom
+        x0 = (self.canvas.winfo_width() - self.scaled_img_width) // 2 + int(self.image_position[0])
+        y0 = (self.canvas.winfo_height() - self.scaled_img_height) // 2 + int(self.image_position[1])
+
+        x1 = drawable.b_box[0] * scale + x0
+        y1 = drawable.b_box[1] * scale + y0
+        x2 = drawable.b_box[2] * scale + x0
+        y2 = drawable.b_box[3] * scale + y0
+        
+        if (abs(drawable.b_box[0]-drawable.b_box[2]) > self.max_bbox or abs(drawable.b_box[1]-drawable.b_box[3]) > self.max_bbox):
+            drawable.visible = false
+            return
+        
+        drawable.visible = True
+
+        box_tags = ()
+        text_tags = ()
+        if isinstance(drawable, GSpan):
+            box_tags = (GROUP_OVERLAY, GROUP_SPANS, GROUP_BOXES, SPAN_BOX_ID.format(id=drawable.id))
+            text_tags = (GROUP_OVERLAY, GROUP_SPAN_TEXT, GROUP_TEXT, SPAN_TEXT_ID.format(id=drawable.id))
+        elif isinstance(drawable, GToken):
+            box_tags = (GROUP_OVERLAY, GROUP_TOKENS, GROUP_BOXES, TOKEN_BOX_ID.format(id=drawable.id))
+            text_tags = (GROUP_OVERLAY, GROUP_TOKEN_TEXT, GROUP_TEXT, TOKEN_TEXT_ID.format(id=drawable.id))
+        elif isinstance(drawable, GSegment):
+            box_tags = tags=(GROUP_OVERLAY, GROUP_SEGMENTS, GROUP_BOXES, SEGMENT_BOX_ID.format(id=drawable.id))
+            text_tags = (GROUP_OVERLAY, GROUP_SEGMENT_TEXT, GROUP_TEXT, SEGMENT_TEXT_ID.format(id=drawable.id))
+        else:
+            return
+        
+        self.canvas.create_rectangle(x1, y1, x2, y2, outline=drawable.get_color_hex(), tags = box_tags)
+        
+        #nevykreslujeme O tag
+        if drawable.tag.code != 0:  
+            self.canvas.create_text(x1, y1 - 5, fill="blue", text=drawable.tag.name, font="Times 8", tags=text_tags)
 
     def display_bounding_boxes(self) -> None:
         """Překreslí token/span/segment boxy."""
         self.canvas.delete(GROUP_BOXES)
-        scale = AppData.canvas_img_scale * AppData.zoom
-        x0 = (AppData.canvas_width - AppData.scaled_img_width) // 2 + int(AppData.position[0])
-        y0 = (AppData.canvas_height - AppData.scaled_img_height) // 2 + int(AppData.position[1])
-
-        if self.show_spans and AppData.invoice is not None:
-            for span in AppData.invoice._spans:
-
-                x1 = span.b_box[0] * scale + x0
-                y1 = span.b_box[1] * scale + y0
-                x2 = span.b_box[2] * scale + x0
-                y2 = span.b_box[3] * scale + y0
-
-                if (abs(span.b_box[0]-span.b_box[2]) > self.max_bbox or abs(span.b_box[1]-span.b_box[3]) > self.max_bbox):
-                    span.visible = false
-                    continue
-                
-                span.visible = True
-
-                self.canvas.create_rectangle(
-                    x1, y1, x2, y2,
-                    outline=span.get_color_hex(),
-                    tags = (GROUP_OVERLAY, GROUP_SPANS, GROUP_BOXES, SPAN_BOX_ID.format(id=span.id))
-                )
-
-        if self.show_tokens and AppData.invoice is not None:
-            for token in AppData.invoice._tokens:
-                x1 = token.b_box[0] * scale + x0
-                y1 = token.b_box[1] * scale + y0
-                x2 = token.b_box[2] * scale + x0
-                y2 = token.b_box[3] * scale + y0
-
-                if (abs(token.b_box[0]-token.b_box[2]) > self.max_bbox or abs(token.b_box[1]-token.b_box[3]) > self.max_bbox):
-                    token.visible = false
-                    continue
-
-                token.visible = True
-
-                self.canvas.create_rectangle(
-                    x1, y1, x2, y2,
-                    outline=token.get_color_hex(),
-                    tags=(GROUP_OVERLAY, GROUP_TOKENS, GROUP_BOXES, TOKEN_BOX_ID.format(id=token.id))
-                )
-
-        if self.show_segments and AppData.invoice is not None:
-            for segment in AppData.invoice._segments:
-                x1 = segment.b_box[0] * scale + x0
-                y1 = segment.b_box[1] * scale + y0
-                x2 = segment.b_box[2] * scale + x0
-                y2 = segment.b_box[3] * scale + y0
-
-                if (abs(segment.b_box[0]-segment.b_box[2]) > self.max_bbox or abs(segment.b_box[1]-segment.b_box[3]) > self.max_bbox):
-                    segment.visible = false
-                    continue
-
-                segment.visible = True
-
-                self.canvas.create_rectangle(
-                    x1, y1, x2, y2,
-                    outline=segment.get_color_hex(),
-                    tags=(GROUP_OVERLAY, GROUP_SEGMENTS, GROUP_BOXES, SEGMENT_BOX_ID.format(id=segment.id))
-                )
-
-
-    def display_text(self) -> None:
-        """Překreslí textové štítky nad boxy."""
         self.canvas.delete("text")
-        scale = AppData.canvas_img_scale * AppData.zoom
-        x0 = (AppData.canvas_width - AppData.scaled_img_width) // 2 + int(AppData.position[0])
-        y0 = (AppData.canvas_height - AppData.scaled_img_height) // 2 + int(AppData.position[1])
 
         if self.show_spans and AppData.invoice is not None:
             for span in AppData.invoice._spans:
-                if not span.visible:
-                    continue
-                x1 = span.b_box[0] * scale + x0
-                y1 = span.b_box[1] * scale + y0
-                if span.tag != span_tags.O:
-                    self.canvas.create_text(
-                        x1, y1 - 5,
-                        fill="blue",
-                        text=span.tag.name,
-                        font="Times 8",
-                        tags = (GROUP_OVERLAY, GROUP_SPAN_TEXT, GROUP_TEXT, SPAN_TEXT_ID.format(id=span.id))
-                    )
+                self.display_bounding_box(span)
 
         if self.show_tokens and AppData.invoice is not None:
             for token in AppData.invoice._tokens:
-                if(not token.visible):
-                    continue
-                x1 = token.b_box[0] * scale + x0
-                y1 = token.b_box[1] * scale + y0
-                if token.tag != token_tags.O:
-                    self.canvas.create_text(
-                        x1, y1 - 5,
-                        fill="blue",
-                        text=token.tag.name,
-                        font="Times 8",
-                        tags=(GROUP_OVERLAY, GROUP_TOKEN_TEXT, GROUP_TEXT, TOKEN_TEXT_ID.format(id=token.id))
-                    )
+                self.display_bounding_box(token)
 
         if self.show_segments and AppData.invoice is not None:
             for segment in AppData.invoice._segments:
-                if(not segment.visible):
-                    continue
-                x1 = segment.b_box[0] * scale + x0
-                y1 = segment.b_box[1] * scale + y0
-                if segment.tag != segment_tags.O:
-                    self.canvas.create_text(
-                        x1, y1 - 5,
-                        fill="blue",
-                        text=segment.tag.name,
-                        font="Times 8",
-                        tags=(GROUP_OVERLAY, GROUP_SEGMENT_TEXT, GROUP_TEXT, SEGMENT_TEXT_ID.format(id=segment.id))
-                    )
+                self.display_bounding_box(segment)
 
 
     def full_redraw(self) -> None:
         """Překreslí obrázek i overlaye."""
-        if AppData.img_path:
-            self.display_img(AppData.img_path)
+        if self.img_path:
+            self.display_img(self.img_path)
             self.display_bounding_boxes() #musí být před display_text
-            self.display_text()
 
     def partial_redraw(self) -> None:
         self.display_bounding_boxes() #musí být před display_text
-        self.display_text()
 
     def sync_bounding_boxes_color(self) -> bool:
         for tok in AppData.invoice._tokens:
@@ -267,10 +225,30 @@ class ImageCanvas(tk.Frame):
         
         return True
 
+    def begin_create_box(self, start_pos_canvas: tuple[int, int]) -> None:
+        self._create_start_canvas = start_pos_canvas
+
+    def finish_create_box(self, end_pos_canvas: tuple[int, int]) -> tuple[float, float, float, float] | None:
+        if self._create_start_canvas is None:
+            return None
+
+        x1, y1 = self._canvas_to_image(*self._create_start_canvas)
+        x2, y2 = self._canvas_to_image(*end_pos_canvas)
+
+        self._create_start_canvas = None
+        self.canvas.delete("move_rectangle")
+
+        return (
+            min(x1, x2),
+            min(y1, y2),
+            max(x1, x2),
+            max(y1, y2),
+    )
+
     # ---------- vnitřní obsluha událostí ----------
 
     def _on_canvas_resize(self, _ev) -> None:
-        if self._img_orig is None or not AppData.img_path:
+        if self._img_orig is None or not self.img_path:
             return
         if self._resize_after_id:
             self.after_cancel(self._resize_after_id)
@@ -285,7 +263,7 @@ class ImageCanvas(tk.Frame):
             zoom_coef = 0.9
         else:
             return
-        AppData.zoom *= zoom_coef
+        self.image_zoom *= zoom_coef
         self.full_redraw()
 
     def _on_right_press(self, event) -> None:
@@ -307,17 +285,16 @@ class ImageCanvas(tk.Frame):
         self.canvas.move(SCAN_IMAGE, dx, dy)
         self.canvas.move(GROUP_OVERLAY, dx, dy)
 
-        AppData.position = (AppData.position[0] + dx, AppData.position[1] + dy)
-        AppData.x0 = AppData.x0 + dx
-        AppData.y0 = AppData.y0 + dy  
+        self.image_position = (self.image_position[0] + dx, self.image_position[1] + dy)
+
 
     def _on_middle_release(self, _ev) -> None:
         self._drag_last = None
 
     def _on_left_press(self, event) -> None:
-        if AppData.last_mouse_click_position is not None and AppData.context_menu_clicked_option == ContextMenuOptions.CREATE_TOKEN:
+        if self._create_start_canvas is not None and self.context_menu_clicked_option == ContextMenuOptions.CREATE_TOKEN:
             self.root.create_token((event.x, event.y))
-        elif AppData.last_mouse_click_position is not None and AppData.context_menu_clicked_option == ContextMenuOptions.CREATE_SEGMENT:
+        elif self._create_start_canvas is not None and self.context_menu_clicked_option == ContextMenuOptions.CREATE_SEGMENT:
             self.root.create_segment((event.x, event.y))
         
         if self._on_left_click:
@@ -326,12 +303,12 @@ class ImageCanvas(tk.Frame):
         
 
     def _on_mouse_move(self, event) -> None:
-        event.x, event.y
+        self._current_mouse_canvas = (event.x, event.y) #uložim aktualni pozici myši
         self.canvas.delete("move_rectangle")
 
-        if AppData.last_mouse_click_position != None:
-            self.canvas.create_rectangle(AppData.last_mouse_click_position[0],
-                                        AppData.last_mouse_click_position[1],
+        if self._create_start_canvas is not None:
+            self.canvas.create_rectangle(self._create_start_canvas[0],
+                                        self._create_start_canvas[1],
                                         event.x,
                                         event.y,
                                         tags="move_rectangle")
@@ -344,9 +321,9 @@ class ImageCanvas(tk.Frame):
 
     def _canvas_to_image(self, x_canvas: int, y_canvas: int) -> tuple[float, float]:
         """Převede souřadnice v canvasu na souřadnice v obrázku."""
-        scale = AppData.canvas_img_scale * AppData.zoom
-        x0 = (AppData.canvas_width - AppData.scaled_img_width) // 2 + int(AppData.position[0])
-        y0 = (AppData.canvas_height - AppData.scaled_img_height) // 2 + int(AppData.position[1])
+        scale = self.base_img_scale * self.image_zoom
+        x0 = (self.canvas.winfo_width() - self.scaled_img_width) // 2 + int(self.image_position[0])
+        y0 = (self.canvas.winfo_height() - self.scaled_img_height) // 2 + int(self.image_position[1])
         return (x_canvas - x0) / scale, (y_canvas - y0) / scale
 
     def _sync_visibility(self, *kwargs) -> None:

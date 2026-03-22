@@ -7,6 +7,7 @@ from tkinter import messagebox, filedialog, simpledialog
 import pytesseract
 
 from sympy import O, true
+from invoice_annotator.view.components.ImageCanvas import ImageCanvas
 from shared.OperationResult import OperationResult
 from invoice_annotator.utils.consts import DEFAULT_SEGMENT_COLOR, DEFAULT_SPAN_COLOR, DEFAULT_TOKEN_COLOR, SELECTED_SEGMENT_COLOR, SELECTED_SPAN_COLOR, SELECTED_TOKEN_COLOR, SET_SEGMENT_COLOR, SET_SPAN_COLOR, SET_TOKEN_COLOR
 from invoice_annotator.utils.GSegment import GSegment
@@ -218,26 +219,23 @@ class HomePageController(Controller):
         return OperationResult(ok) 
 
 
-    def select(self, mouse_position: tuple[int, int], variant: DataSource, tokens_visible: bool, spans_visible: bool, segments_visible: bool) -> OperationResult:
+    def select(self, mouse_position: tuple[int, int], variant: DataSource, tokens_visible: bool, spans_visible: bool, segments_visible: bool,
+               canvas:ImageCanvas) -> OperationResult:
         if (variant == DataSource.TOKENS or variant == DataSource.SPANS) and tokens_visible:
             # V režimu "tokens"/"spans" vybíráme jednotlivé tokeny (stav pro stavbu spanu)
-            ok = self.select_token(mouse_position)
+            ok = self.select_token(mouse_position, canvas)
             return OperationResult(ok)
         elif variant == DataSource.RELATIONSHIP and spans_visible:
             # V režimu "relationships" vybíráme celé spany
-            ok = self.select_span(mouse_position)
+            ok = self.select_span(mouse_position, canvas)
             return OperationResult(ok)
         elif variant == DataSource.SEGMENTS and segments_visible:
             # V režimu "relationships" vybíráme celé spany
-            ok = self.select_segment(mouse_position)
+            ok = self.select_segment(mouse_position, canvas)
             return OperationResult(ok)
         
         else:
-            messagebox.showwarning(
-                "Upozornění",
-                "Musíte zvolit, zda chcete označovat tokeny/spany a mít zobrazené tokeny, "
-                "nebo označovat vztahy a mít zobrazené spany."
-            )
+            
             return OperationResult(False)
 
     def remove_relationship(self, relationship: GRelationship) -> OperationResult:
@@ -248,8 +246,8 @@ class HomePageController(Controller):
             return OperationResult(False)
         
 
-    def select_token(self, mouse_position: tuple[int, int]) -> bool:
-        token = self.get_token_by_bounding_box(mouse_position)
+    def select_token(self, mouse_position: tuple[int, int], canvas:ImageCanvas) -> bool:
+        token = self.get_token_by_bounding_box(mouse_position, canvas)
 
         if token is not None and token.visible:
             # toggle logika pro token
@@ -277,8 +275,8 @@ class HomePageController(Controller):
 
         return True 
 
-    def select_span(self, mouse_position: tuple[int, int]) -> None:
-        span = self.get_span_by_bounding_box(mouse_position)
+    def select_span(self, mouse_position: tuple[int, int], canvas:ImageCanvas) -> None:
+        span = self.get_span_by_bounding_box(mouse_position, canvas)
 
 
         if span is not None and span.visible:
@@ -302,8 +300,8 @@ class HomePageController(Controller):
         
         return True
 
-    def select_segment(self, mouse_position: tuple[int, int]) -> None:
-        segment = self.get_segment_by_bounding_box(mouse_position)
+    def select_segment(self, mouse_position: tuple[int, int], canvas:ImageCanvas) -> None:
+        segment = self.get_segment_by_bounding_box(mouse_position, canvas)
 
         if segment is not None and segment.visible:
             # toggle logika pro token
@@ -329,17 +327,13 @@ class HomePageController(Controller):
 
         return True
 
-    def get_span_by_bounding_box(self, mouse_position:tuple[int, int]) -> GSpan | None:
+    def get_span_by_bounding_box(self, mouse_position:tuple[int, int], canvas:ImageCanvas) -> GSpan | None:
         mx, my = mouse_position
 
         # Scale a posun: obraz -> plátno
-        scale = AppData.canvas_img_scale * AppData.zoom
-        x0 = (AppData.canvas_width - AppData.scaled_img_width) // 2 + int(AppData.position[0])
-        y0 = (AppData.canvas_height - AppData.scaled_img_height) // 2 + int(AppData.position[1])
-
+        scale = canvas.base_img_scale * canvas.image_zoom
         # Inverzní transformace: plátno -> obraz (neškálované souřadnice)
-        ix = (mx - x0) / scale
-        iy = (my - y0) / scale
+        ix, iy = canvas._canvas_to_image(mx, my)
 
         threshold_img: float = max(1, 2 / scale)
 
@@ -356,17 +350,13 @@ class HomePageController(Controller):
 
 
 
-    def get_token_by_bounding_box(self, mouse_position:tuple[int, int]) -> GToken | None:
+    def get_token_by_bounding_box(self, mouse_position:tuple[int, int],canvas:ImageCanvas) -> GToken | None:
         mx, my = mouse_position
 
         # Scale a posun: obraz -> plátno
-        scale = AppData.canvas_img_scale * AppData.zoom
-        x0 = (AppData.canvas_width - AppData.scaled_img_width) // 2 + int(AppData.position[0])
-        y0 = (AppData.canvas_height - AppData.scaled_img_height) // 2 + int(AppData.position[1])
-
+        scale = canvas.base_img_scale * canvas.image_zoom
         # Inverzní transformace: plátno -> obraz (neškálované souřadnice)
-        ix = (mx - x0) / scale
-        iy = (my - y0) / scale
+        ix, iy = canvas._canvas_to_image(mx, my)
 
         threshold_img: float = max(1, 2 / scale)
 
@@ -380,17 +370,13 @@ class HomePageController(Controller):
 
         return None
     
-    def get_segment_by_bounding_box(self, mouse_position:tuple[int, int]) -> GSegment | None:
+    def get_segment_by_bounding_box(self, mouse_position:tuple[int, int], canvas:ImageCanvas) -> GSegment | None:
         mx, my = mouse_position
 
         # Scale a posun: obraz -> plátno
-        scale = AppData.canvas_img_scale * AppData.zoom
-        x0 = (AppData.canvas_width - AppData.scaled_img_width) // 2 + int(AppData.position[0])
-        y0 = (AppData.canvas_height - AppData.scaled_img_height) // 2 + int(AppData.position[1])
-
+        scale = canvas.base_img_scale * canvas.image_zoom
         # Inverzní transformace: plátno -> obraz (neškálované souřadnice)
-        ix = (mx - x0) / scale
-        iy = (my - y0) / scale
+        ix, iy = canvas._canvas_to_image(mx, my)
 
         threshold_img: float = max(1, 2 / scale)
 
@@ -404,88 +390,23 @@ class HomePageController(Controller):
 
         return None
 
-    def create_token(self, mouse_position:tuple[int, int]) -> OperationResult:
-        if(AppData.last_mouse_click_position is None):
-            AppData.last_mouse_click_position = mouse_position
-            return OperationResult(True, "cross")
-
-        # Scale a posun: obraz -> plátno
-        scale = AppData.canvas_img_scale * AppData.zoom
-        x0 = (AppData.canvas_width - AppData.scaled_img_width) // 2 + int(AppData.position[0])
-        y0 = (AppData.canvas_height - AppData.scaled_img_height) // 2 + int(AppData.position[1])
-
-        # Inverzní transformace: plátno -> obraz (neškálované souřadnice)
-        ix = (AppData.last_mouse_click_position[0] - x0) / scale
-        iy = (AppData.last_mouse_click_position[1] - y0) / scale
-
-        left_corner_x = min((AppData.last_mouse_click_position[0] - x0) / scale,
-                            (mouse_position[0] - x0) / scale)
-        
-        left_corner_y = min((AppData.last_mouse_click_position[1] - y0) / scale,
-                            (mouse_position[1] - y0) / scale)
-        
-
-        right_corner_x = max((AppData.last_mouse_click_position[0] - x0) / scale,
-                            (mouse_position[0] - x0) / scale)
-        
-        right_corner_y = max((AppData.last_mouse_click_position[1] - y0) / scale,
-                            (mouse_position[1] - y0) / scale)
-
-        transform_cordinates = (left_corner_x, left_corner_y, right_corner_x, right_corner_y)
-
-        text = simpledialog.askstring("Tvoraba tokenu", "Jaký text má obsahovat token?")
-        while(not text):
-            text = simpledialog.askstring("Tvoraba tokenu", "Jaký text má obsahovat token?")
-        
-
-        token = GToken(None, text,  transform_cordinates,
-                                token_tags.O,
-                                DEFAULT_TOKEN_COLOR, synthetic=True)
-
+    def create_token(self, bbox: tuple[float, float, float, float], text: str) -> OperationResult:
+        token = GToken(
+            None,
+            text,
+            bbox,
+            token_tags.O,
+            DEFAULT_TOKEN_COLOR,
+            synthetic=True
+        )
         AppData.invoice.append_token(token)
-        AppData.last_mouse_click_position = None
+        return OperationResult(True)
 
-
-        return OperationResult(True, "arrow")
-
-    def create_segment(self, mouse_position:tuple[int, int]) -> OperationResult:
-        if(AppData.last_mouse_click_position is None):
-            AppData.last_mouse_click_position = mouse_position
-            return OperationResult(True, "cross")
-
-        # Scale a posun: obraz -> plátno
-        scale = AppData.canvas_img_scale * AppData.zoom
-        x0 = (AppData.canvas_width - AppData.scaled_img_width) // 2 + int(AppData.position[0])
-        y0 = (AppData.canvas_height - AppData.scaled_img_height) // 2 + int(AppData.position[1])
-
-        # Inverzní transformace: plátno -> obraz (neškálované souřadnice)
-        ix = (AppData.last_mouse_click_position[0] - x0) / scale
-        iy = (AppData.last_mouse_click_position[1] - y0) / scale
-
-        left_corner_x = min((AppData.last_mouse_click_position[0] - x0) / scale,
-                            (mouse_position[0] - x0) / scale)
-        
-        left_corner_y = min((AppData.last_mouse_click_position[1] - y0) / scale,
-                            (mouse_position[1] - y0) / scale)
-        
-
-        right_corner_x = max((AppData.last_mouse_click_position[0] - x0) / scale,
-                            (mouse_position[0] - x0) / scale)
-        
-        right_corner_y = max((AppData.last_mouse_click_position[1] - y0) / scale,
-                            (mouse_position[1] - y0) / scale)
-
-        transform_cordinates = (left_corner_x, left_corner_y, right_corner_x, right_corner_y)
-       
-
-        segment = GSegment(None, transform_cordinates,segment_tags.O, DEFAULT_SEGMENT_COLOR)
-
-        
+    def create_segment(self, bbox: tuple[float, float, float, float]) -> OperationResult:
+        segment = GSegment(None, bbox,segment_tags.O, DEFAULT_SEGMENT_COLOR)
 
         AppData.invoice.append_segment(segment)
-        AppData.last_mouse_click_position = None
-
-        return OperationResult(True, "arrow")
+        return OperationResult(True)
 
     def set_selected_tokens_token_tag(self, tag:token_tags) -> OperationResult:
         for selected_token in AppData.invoice._selected_tokens:

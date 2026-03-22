@@ -11,20 +11,20 @@ class AppData:
     original_img_width:int = 0
     original_img_height:int = 0
 
-    canvas_width:int = 0
-    canvas_height:int = 0
-
-    scaled_img_width: int = 0
-    scaled_img_height: int = 0
-
-    canvas_img_scale:int  = 1
-    zoom:float = 1
-
-    img_path:str = ""
-
     invoice: GInvoice = GInvoice()
 
-    position:tuple[float, float] = [0 , 0]
+    #canvas_width:int = 0
+    #canvas_height:int = 0
+
+    #scaled_img_width: int = 0
+    #scaled_img_height: int = 0
+
+    #canvas_img_scale:int  = 1
+    #zoom:float = 1
+
+    #img_path:str = ""
+
+    #position:tuple[float, float] = [0 , 0]
 
     last_mouse_click_position:tuple[float, float]|None = None
     context_menu_clicked_option:ContextMenuOptions = ContextMenuOptions.OTHER
@@ -35,16 +35,14 @@ class AppData:
         AppData.original_img_width = 0
         AppData.original_img_height = 0
 
-        AppData.canvas_width = 0
-        AppData.canvas_height = 0
+        #AppData.canvas_width = 0
+        #AppData.canvas_height = 0
 
-        AppData.scaled_img_width = 0
-        AppData.scaled_img_height = 0
+        #AppData.scaled_img_width = 0
+        #AppData.scaled_img_height = 0
 
-        AppData.x0 = 0
-        AppData.y0 = 0
 
-        AppData.canvas_img_scale = 1
-        AppData.zoom = 1
+        #AppData.canvas_img_scale = 1
+        #AppData.zoom = 1
 
         AppData.invoice = GInvoice()

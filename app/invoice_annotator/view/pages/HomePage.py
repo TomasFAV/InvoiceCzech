@@ -4,6 +4,7 @@ from tkinter import Tk, ttk, messagebox
 
 import tkinter
 from tkinter import filedialog
+from tkinter import simpledialog
 from turtle import st
 from typing import Any, List, Callable
 
@@ -86,9 +87,6 @@ class HomePage(View):
         except Exception:
             pass
 
-    def display_text(self) -> None:
-        self.image_canvas.display_text()
-
     def partial_redraw(self) -> None:
         try:
             if getattr(AppData, "invoice", None) is not None:
@@ -96,13 +94,14 @@ class HomePage(View):
                 self.entities_panel.populate_relationships(AppData.invoice)
         except Exception:
             pass
+
         self.image_canvas.partial_redraw()
 
 
     def open_invoice(self):
         self.window.show_frame("HomePage")
         
-        file = tkinter.filedialog.askopenfile(initialfile=AppData.img_path, filetypes=[("png","*.png"),("jpg","*.jpg")])
+        file = tkinter.filedialog.askopenfile(filetypes=[("png","*.png"),("jpg","*.jpg")])
         if not file:
             return
 
@@ -172,13 +171,8 @@ class HomePage(View):
         self.panedwindow.pack(fill=tk.BOTH, expand=True)
 
         # Levý panel: štítky
-        self.labels_panel = LabelsPanel(
-            self.panedwindow,
-            self.token_labels,
-            self.span_labels,
-            self.relationship_labels,
-            self.segment_labels,
-            on_assign=lambda: self._set_tag(None),)
+        self.labels_panel = LabelsPanel(self.panedwindow, self.token_labels, self.span_labels,
+            self.relationship_labels, self.segment_labels, on_assign=lambda: self._set_tag(None),)
 
         # Střed: toolbar + canvas_view
         center = ttk.Frame(self.panedwindow, padding=(0, 8, 0, 8))
@@ -198,55 +192,7 @@ class HomePage(View):
         self.panedwindow.add(center, weight=50)
         self.panedwindow.add(self.entities_panel, weight=25)
 
-        self.after(0, self._set_initial_sashes)
-
-    def _set_initial_sashes(self) -> None:
-        # Počkej, až bude mít panedwindow nenulovou šířku
-        w = self.panedwindow.winfo_width()
-        if w <= 1:
-            self.after(50, self._set_initial_sashes)
-            return
-        # Sash 0 mezi 1. a 2. pane na 25 %, sash 1 mezi 2. a 3. pane na 75 %
-        self.panedwindow.sashpos(0, int(w * 0.25))
-        self.panedwindow.sashpos(1, int(w * 0.75))
-
-    def _build_statusbar(self) -> None:
-        self.status: ttk.Label = ttk.Label(self, text="", anchor="w", relief=tk.SUNKEN)
-        self.status.pack(fill=tk.X, side=tk.BOTTOM)
-
-    def _build_context_menu(self) -> None:
-        self._ctx = tk.Menu(self, tearoff=0)
-
-    def _fill_token_context_menu(self, token:GToken) -> None:
-        self._clear_context_menu()
-
-        self._ctx.add_command(label="Resetovat tag tokenu", command=lambda: self.reset_token_tag(token))
-        self._ctx.add_command(label="Odstranit token",  command=lambda: self.remove_token(token))
-
-    def _fill_span_context_menu(self, span:GSpan) -> None:
-        self._clear_context_menu()
-
-        self._ctx.add_command(label="Odstranit Span", command=lambda: self.remove_span(span))
-
-    def _fill_relationship_context_menu(self, relationship:GRelationship) -> None:
-        self._clear_context_menu()
-
-        self._ctx.add_command(label="Odstranit Vztah", command=lambda: self.remove_relationship(relationship))
-
-    def _fill_segment_context_menu(self, segment:GSegment)->None:
-        self._clear_context_menu()
-
-        self._ctx.add_command(label="Odstranit Segment", command=lambda: self.remove_segment(segment))
-
-    def _fill_create_object_menu(self, mouse_position_local) -> None:
-        self._clear_context_menu()
-        self._ctx.add_command(label="Vytvořit Token", 
-                              command=lambda: self.create_token(mouse_position_local))
-        self._ctx.add_command(label="Vytvořit Segment",
-                              command=lambda: self.create_segment(mouse_position_local))
-
-    def _clear_context_menu(self) -> None:
-        self._ctx.delete(0, tk.END)
+        
 
     #--------------------------------------context menu operace ---------------------------------------------------
     def reset_token_tag(self, token:GToken):
@@ -300,79 +246,102 @@ class HomePage(View):
 
 
     def create_token(self, mouse_position_local):
-        AppData.context_menu_clicked_option = ContextMenuOptions.CREATE_TOKEN
-        result:OperationResult = self.controller.create_token(mouse_position_local)    
-        
+        self.image_canvas.context_menu_clicked_option = ContextMenuOptions.CREATE_TOKEN
+
+        if self.image_canvas._create_start_canvas is None:
+            self.image_canvas.begin_create_box(mouse_position_local)
+            self.config(cursor="cross")
+            return
+
+        bbox = self.image_canvas.finish_create_box(mouse_position_local)
+        if bbox is None:
+            return
+
+        text = simpledialog.askstring("Tvorba tokenu", "Jaký text má obsahovat token?")
+        if not text:
+            self.config(cursor="arrow")
+            return
+
+        result = self.controller.create_token(bbox, text)
+
+        self.config(cursor="arrow")
         if result.ok:
-            if isinstance(result.passed_value, str):
-                if(result.passed_value == "cross"):
-                    self.config(cursor=result.passed_value)
-                elif(result.passed_value == "arrow"):
-                    self.config(cursor=result.passed_value)
-                    self.partial_redraw()
+            self.partial_redraw()
         else:
-            messagebox.showerror("Chyba","Operace se nezdařila")
+            messagebox.showerror("Chyba", "Operace se nezdařila")
+    
 
     def create_segment(self, mouse_position_local):
-        AppData.context_menu_clicked_option = ContextMenuOptions.CREATE_SEGMENT
-        result:OperationResult = self.controller.create_segment(mouse_position_local) 
+        self.image_canvas.context_menu_clicked_option = ContextMenuOptions.CREATE_SEGMENT
 
+        if self.image_canvas._create_start_canvas is None:
+            self.image_canvas.begin_create_box(mouse_position_local)
+            self.config(cursor="cross")
+            return
+
+        bbox = self.image_canvas.finish_create_box(mouse_position_local)
+        if bbox is None:
+            return
+
+
+        result = self.controller.create_segment(bbox)
+
+        self.config(cursor="arrow")
         if result.ok:
-            if isinstance(result.passed_value, str):
-                if(result.passed_value == "cross"):
-                    self.config(cursor=result.passed_value)
-                elif(result.passed_value == "arrow"):
-                    self.config(cursor=result.passed_value)
-                    self.partial_redraw()
+            self.partial_redraw()
         else:
-            messagebox.showerror("Chyba","Operace se nezdařila")   
+            messagebox.showerror("Chyba", "Operace se nezdařila")
 
     #--------------------------------------context menu operace ---------------------------------------------------
     #---------------------------------------------KONEC------------------------------------------------------------
     # ---------- Pomocné ----------
 
+    def _show_context_menu_canvas(self, mouse_position_global, mouse_position_local, event_source:EventSource):
+        span = self.controller.get_span_by_bounding_box(mouse_position_local, self.image_canvas)
+        token = self.controller.get_token_by_bounding_box(mouse_position_local, self.image_canvas)
+        segment = self.controller.get_segment_by_bounding_box(mouse_position_local, self.image_canvas)
+
+        if (self.image_canvas.span_enabled_value.get() and span):
+            self._fill_span_context_menu(span)
+        elif(self.image_canvas.token_enabled_value.get() and token):
+            self._fill_token_context_menu(token)
+        elif(self.image_canvas.segment_enabled_value.get() and segment):
+            self._fill_segment_context_menu(segment)
+        else:
+            self._fill_create_object_menu(mouse_position_local)
+
+    def _show_context_menu_entities_panel(self, mouse_position_global, mouse_position_local, event_source:EventSource):
+            cur_item = self.entities_panel.tree.focus()
+            cur_item = self.entities_panel.tree.item(cur_item)
+            
+            if(self.entities_panel._current_view == "spans"):
+                if cur_item and cur_item['values'] and cur_item['values'][0] == "SPAN":
+                    span: GSpan = [sp for sp in AppData.invoice._spans if sp.id == cur_item['values'][1]][0]
+                    self._fill_span_context_menu(span)
+
+                elif cur_item and cur_item['values'] and cur_item['values'][0] == "TOK":
+                    token: GToken = [tk for tk in AppData.invoice._tokens if tk.id == cur_item['values'][1]][0]
+                    self._fill_token_context_menu(token)
+
+            elif(self.entities_panel._current_view == "relationships"):
+                if cur_item and cur_item['tags'][0] == "SPAN":
+                    span: GSpan = [sp for sp in AppData.invoice._spans if sp.id == cur_item['values'][1]][0]
+                    self._fill_span_context_menu(span)
+
+                elif cur_item and cur_item['tags'][0] == "RELATIONSHIP":
+                    relationship: GRelationship = [rel for id, rel in enumerate(AppData.invoice._relationships) if id == cur_item['values'][1]][0]
+                    self._fill_relationship_context_menu(relationship)
+            else:
+                messagebox.showerror("Error", "při stisknutí kolečka _view obsahuje neplatnou hodnotu")
+
     def _show_context_menu(self, mouse_position_global, mouse_position_local, event_source:EventSource) -> None:
         self._clear_context_menu()
         try:
             if(event_source == EventSource.IMAGE_CANVAS):
-                span = self.controller.get_span_by_bounding_box(mouse_position_local)
-                token = self.controller.get_token_by_bounding_box(mouse_position_local)
-                segment = self.controller.get_segment_by_bounding_box(mouse_position_local)
-
-                if (self.image_canvas.span_enabled_value.get() and span):
-                    self._fill_span_context_menu(span)
-                elif(self.image_canvas.token_enabled_value.get() and token):
-                    self._fill_token_context_menu(token)
-                elif(self.image_canvas.segment_enabled_value.get() and segment):
-                    self._fill_segment_context_menu(segment)
-                else:
-                    self._fill_create_object_menu(mouse_position_local)
+                self._show_context_menu_canvas(mouse_position_global, mouse_position_local, event_source)
 
             elif(event_source == EventSource.ENTITIES_PANEL):
-                if(self.entities_panel._current_view == "spans"):
-                    cur_item = self.entities_panel.tree.focus()
-                    cur_item = self.entities_panel.tree.item(cur_item)
-
-                    if cur_item and cur_item['values'] and cur_item['values'][0] == "SPAN":
-                        span: GSpan = [sp for sp in AppData.invoice._spans if sp.id == cur_item['values'][1]][0]
-                        self._fill_span_context_menu(span)
-
-                    elif cur_item and cur_item['values'] and cur_item['values'][0] == "TOK":
-                        token: GToken = [tk for tk in AppData.invoice._tokens if tk.id == cur_item['values'][1]][0]
-                        self._fill_token_context_menu(token)
-                elif(self.entities_panel._current_view == "relationships"):
-                    cur_item = self.entities_panel.tree.focus()
-                    cur_item = self.entities_panel.tree.item(cur_item)
-
-                    if cur_item and cur_item['tags'][0] == "SPAN":
-                        span: GSpan = [sp for sp in AppData.invoice._spans if sp.id == cur_item['values'][1]][0]
-                        self._fill_span_context_menu(span)
-
-                    elif cur_item and cur_item['tags'][0] == "RELATIONSHIP":
-                        relationship: GRelationship = [rel for id, rel in enumerate(AppData.invoice._relationships) if id == cur_item['values'][1]][0]
-                        self._fill_relationship_context_menu(relationship)
-                else:
-                    messagebox.showerror("Error", "při stisknutí kolečka _view obsahuje neplatnou hodnotu")
+                self._show_context_menu_entities_panel(mouse_position_global, mouse_position_local, event_source)
 
             elif(event_source == EventSource.LABELS_PANEL):
                 ...
@@ -389,35 +358,25 @@ class HomePage(View):
             return False
 
         idx = selection[0]
+        result:OperationResult = OperationResult(False)
         if self.labels_panel.get_current_source() == DataSource.TOKENS:
             tag = list(token_tags)[idx]
             result: OperationResult = self.controller.set_selected_tokens_token_tag(tag)
-            
-            if not result.ok or not self.sync_bounding_boxes_color():
-                messagebox.showerror("Chyba","Operace se nezdařila")
-                return False
 
         elif self.labels_panel.get_current_source() == DataSource.SPANS:
             tag = list(span_tags)[idx+1] #Kvůli vynechanému prvnímu prvku z enum
             result: OperationResult = self.controller.set_selected_tokens_span_tag(tag)
             
-            if not result.ok or not self.sync_bounding_boxes_color():
-                messagebox.showerror("Chyba","Operace se nezdařila")
-                return False
-            
         elif self.labels_panel.get_current_source() == DataSource.RELATIONSHIP:
             tag = list(relationship_types)[idx+1] #Kvůli vynechanému prvnímu prvku z enum
             result: OperationResult = self.controller.set_selected_relationship_tag(tag)
-            
-            if not result.ok or not self.sync_bounding_boxes_color():
-                messagebox.showerror("Chyba","Operace se nezdařila")
-                return False
 
         elif self.labels_panel.get_current_source() == DataSource.SEGMENTS:
             tag = list(segment_tags)[idx]
             result: OperationResult = self.controller.set_selected_segments_segment_tag(tag)
 
-            if not result.ok or not self.sync_bounding_boxes_color():
+
+        if not result.ok or not self.sync_bounding_boxes_color():
                 messagebox.showerror("Chyba","Operace se nezdařila")
                 return False
 
@@ -436,11 +395,58 @@ class HomePage(View):
         return self.image_canvas.sync_bounding_boxes_color()
     
     def select(self, pos, source:DataSource, token_enabled_value:bool, span_enabled_value:bool, segment_enabled_value:bool)-> bool:
-        result:OperationResult = self.controller.select(pos, source, token_enabled_value, span_enabled_value, segment_enabled_value)
+        result:OperationResult = self.controller.select(pos, source, token_enabled_value, span_enabled_value, segment_enabled_value,
+                                                        self.image_canvas)
         
         if result.ok:
             self.sync_bounding_boxes_color()
             return True
         else:
-            messagebox.showerror("Chyba","Operace se nezdařila")
+            messagebox.showwarning(
+                "Upozornění",
+                "Musíte zvolit, zda chcete označovat tokeny/spany a mít zobrazené tokeny, "
+                "nebo označovat vztahy a mít zobrazené spany."
+            )
             return False
+        
+
+
+    ###################################################################
+
+    def _build_statusbar(self) -> None:
+        self.status: ttk.Label = ttk.Label(self, text="", anchor="w", relief=tk.SUNKEN)
+        self.status.pack(fill=tk.X, side=tk.BOTTOM)
+
+    def _build_context_menu(self) -> None:
+        self._ctx = tk.Menu(self, tearoff=0)
+
+    def _fill_token_context_menu(self, token:GToken) -> None:
+        self._clear_context_menu()
+
+        self._ctx.add_command(label="Resetovat tag tokenu", command=lambda: self.reset_token_tag(token))
+        self._ctx.add_command(label="Odstranit token",  command=lambda: self.remove_token(token))
+
+    def _fill_span_context_menu(self, span:GSpan) -> None:
+        self._clear_context_menu()
+
+        self._ctx.add_command(label="Odstranit Span", command=lambda: self.remove_span(span))
+
+    def _fill_relationship_context_menu(self, relationship:GRelationship) -> None:
+        self._clear_context_menu()
+
+        self._ctx.add_command(label="Odstranit Vztah", command=lambda: self.remove_relationship(relationship))
+
+    def _fill_segment_context_menu(self, segment:GSegment)->None:
+        self._clear_context_menu()
+
+        self._ctx.add_command(label="Odstranit Segment", command=lambda: self.remove_segment(segment))
+
+    def _fill_create_object_menu(self, mouse_position_local) -> None:
+        self._clear_context_menu()
+        self._ctx.add_command(label="Vytvořit Token", 
+                              command=lambda: self.create_token(mouse_position_local))
+        self._ctx.add_command(label="Vytvořit Segment",
+                              command=lambda: self.create_segment(mouse_position_local))
+
+    def _clear_context_menu(self) -> None:
+        self._ctx.delete(0, tk.END)

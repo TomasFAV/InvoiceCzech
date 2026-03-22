@@ -4,12 +4,12 @@ import numpy as np
 
 class LiltModel:
 
-    def __init__(self, model_path="TomasFAV/LiLTInvoiceCzechV3"):
+    def __init__(self, model_path="TomasFAV/LiLTInvoiceCzechV0123"):
         
         self.__device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        self.__model = AutoModelForTokenClassification.from_pretrained(model_path).to(self.__device)
-        self.__tokenizer = AutoTokenizer.from_pretrained(model_path)
+        #self.__model = AutoModelForTokenClassification.from_pretrained(model_path).to(self.__device)
+        #self.__tokenizer = AutoTokenizer.from_pretrained(model_path)
 
     def predict(self, words, bboxes):
         """
