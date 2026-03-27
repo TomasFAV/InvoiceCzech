@@ -7,11 +7,10 @@ from invoice_annotator.view.interfaces.IDataAnnotator import IMainWindow
 
 class Component(ttk.Frame):
 
-    def __init__(self, window:IMainWindow, controller:Controller, parent_view:View, master = None, **kwargs):
+    def __init__(self, window:IMainWindow, parent_view:View, master = None, **kwargs):
         super().__init__(master, **kwargs)
 
         self.window: IMainWindow = window
-        self.controller: Controller
         self.parent_element = master
         self.parent_view = parent_view
     

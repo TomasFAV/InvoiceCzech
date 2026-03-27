@@ -86,4 +86,7 @@ class token_tags(Enum):
         return cls.O  # Nebo None, pokud ID neexistuje
 
 
+    def __str__(self):
+        return self.text
+
 TOKEN_TAGS_TO_IGNORE = [token_tags.B_VAT, token_tags.I_VAT, token_tags.B_VAT_BASE, token_tags.I_VAT_BASE, token_tags.B_VAT_PERCENTAGE, token_tags.I_VAT_PERCENTAGE]

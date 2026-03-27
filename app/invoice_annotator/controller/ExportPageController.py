@@ -3,10 +3,14 @@ import os
 import sys
 
 from tkinter import messagebox, filedialog, simpledialog
+from typing import Any
 
 import pytesseract
 
+from requests import Session
 from sympy import O, true
+from invoices_generator.core.bank import bank
+from invoices_generator.core.company import company
 from shared.OperationResult import OperationResult
 from invoice_annotator.utils.consts import DEFAULT_SEGMENT_COLOR, DEFAULT_SPAN_COLOR, DEFAULT_TOKEN_COLOR, SELECTED_SEGMENT_COLOR, SELECTED_SPAN_COLOR, SELECTED_TOKEN_COLOR, SET_SEGMENT_COLOR, SET_SPAN_COLOR, SET_TOKEN_COLOR
 from invoice_annotator.utils.GSegment import GSegment
@@ -33,30 +37,35 @@ from pathlib import Path
 class ExportPageController(Controller):
 
 
-    def __init__(self):
-        ...
+    def __init__(self, session:Session):
+        super().__init__(session)
 
 
+    def export_invoice(self, export_directory_path:str, form_data:dict[str, Any],*args,**kwargs) -> OperationResult:
+        if not self.session.image_path:
+            return OperationResult(False)
 
-    def export_invoice(self, export_directory_path:str, *kwargs) -> OperationResult:
-        if (not AppData.invoice or len(AppData.invoice._spans) == 0):
-            messagebox.showwarning("Chyba", "Snažíte se exportovat prázdnou fakturu.")
-            return
+        self.session.invoice.from_dict(form_data)
 
-        export_img_name = Path(AppData.img_path).name
+        export_img_name = Path(self.session.image_path).name
         export_dir = export_directory_path
 
-        img_path: str = AppData.img_path
-
-        self.export_layoutlmv3(export_img_name, export_directory_path)
-        self.export_donut(export_img_name, export_directory_path)
-        self.export_yolo(export_img_name, export_directory_path)
-        self.export_coco(export_img_name, export_directory_path)
+        if(not self.export_layoutlmv3(export_img_name, export_directory_path)):
+            return OperationResult(False)
+        
+        if(not self.export_donut(export_img_name, export_directory_path)):
+            return OperationResult(False)
+        
+        if(not self.export_yolo(export_img_name, export_directory_path)):
+            return OperationResult(False)
+        
+        if(not self.export_coco(export_img_name, export_directory_path)):
+            return OperationResult(False)
 
         export_img_path = os.path.join(export_dir, "images" ,export_img_name)
         os.makedirs(os.path.join(export_dir, "images"), exist_ok=True)
         
-        img = Image.open(img_path)
+        img = Image.open(self.session.image_path)
         img.save(export_img_path, format="PNG")
 
 
@@ -67,16 +76,16 @@ class ExportPageController(Controller):
             f.write(yolo_yaml)
 
 
-        AppData.reset()
-        messagebox.showinfo("Exportováno", "Faktura se štítky byla úspěšně exportována.")
-
-        return OperationResult(True, img_path)
+        result = OperationResult(True, self.session.image_path)
+        self.session.reset()
+        
+        return result
 
 
     def export_layoutlmv3(self, export_img_name:str,  folder: str) -> bool:
         replaced = False #reprezentuje zda se již záznam v datech nacházel
 
-        json_output: str = AppData.invoice.to_json_layoutlmv3()
+        json_output: str = self.session.invoice.to_json_layoutlmv3()
 
         # vytvoření podsložky LayoutLMV3 (pokud neexistuje)
         export_dir = folder
@@ -114,7 +123,7 @@ class ExportPageController(Controller):
     def export_donut(self,export_img_name:str, folder) -> bool:
         replaced = False #reprezentuje zda se již záznam v datech nacházel
         
-        json_output: dict = AppData.invoice.to_json_donut(False, False)
+        json_output: dict = self.session.invoice.to_json_donut(False, False)
 
         # vytvoření podsložky LayoutLMV3 (pokud neexistuje)
         export_dir = folder
@@ -151,7 +160,7 @@ class ExportPageController(Controller):
         return True
 
     def export_yolo(self,export_img_name:str, folder) -> bool:
-        yolo_output: str = AppData.invoice.to_json_yolo()
+        yolo_output: str = self.session.invoice.to_json_yolo()
 
         # vytvoření podsložky LayoutLMV3 (pokud neexistuje)
         export_dir = os.path.join(folder, "labels")
@@ -172,7 +181,7 @@ class ExportPageController(Controller):
 
         export_json_path = os.path.join(export_dir, "metadata_coco.json")
 
-        json_output: str = AppData.invoice.to_json_coco(export_json_path, export_img_name)
+        json_output: str = self.session.invoice.to_json_coco(export_json_path, export_img_name)
 
         #změn data
         with open(export_json_path, "w", encoding="utf-8") as f:

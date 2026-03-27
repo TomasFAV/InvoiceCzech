@@ -37,3 +37,6 @@ class segment_tags(Enum):
                 return tag
                 
         return cls.O
+
+    def __str__(self):
+        return self.text

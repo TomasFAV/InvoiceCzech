@@ -1,6 +1,8 @@
 from copy import copy
 import json
 from pathlib import Path
+from invoice_annotator.utils.consts import DEFAULT_SEGMENT_COLOR, DEFAULT_TOKEN_COLOR, SET_SEGMENT_COLOR, SET_SPAN_COLOR, SET_TOKEN_COLOR
+from invoices_generator.core.enumerates.segment_tags import segment_tags
 from invoice_annotator.utils.GSegment import GSegment
 from invoice_annotator.utils.GToken import GToken
 from invoice_annotator.utils.GSpan import GSpan
@@ -10,12 +12,11 @@ from invoice_annotator.utils.GRelationship import GRelationship
 from abc import ABC
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, List
+from typing import List
 
 
 from jinja2 import Environment, FileSystemLoader
 
-from ie_engine.enumerates.engines import engines
 from invoices_generator.core.enumerates.span_tags import SPAN_TAGS_TO_IGNORE, span_tags
 from invoices_generator.utility.json_serializable import json_serializable
 from invoices_generator.core.enumerates.token_tags import TOKEN_TAGS_TO_IGNORE, token_tags
@@ -26,7 +27,7 @@ from invoices_generator.utility.utils import get_dimensions_symetry, get_iou, ge
 @dataclass
 class Invoice(json_serializable, ABC):
     """
-    Abstraktní třída faktury, která je děděná třídou GInvoice (Graphical Invoice) a třídou DInvoice (Data Invoice).
+    Abstraktní třída faktury, která je děděná třídou DInvoice (Data Invoice) a třídou GInvoice (Graphical Invoice).
     Obsahuje metody pro práci s tokeny/spany/vztahy faktury
     """
 
@@ -65,24 +66,12 @@ class Invoice(json_serializable, ABC):
     ####       METHODS      ####
     ####                    ####
     ############################
-
-    def generate_html(self, template_path: str, output_path: str) -> bool:
-        env = Environment(loader=FileSystemLoader("app/invoices/templates"))
-        tpl = env.get_template(template_path)
-
-        html = tpl.render(invoice=self, now=datetime.now().strftime("%d.%m.%Y %H:%M"))
-        with open(output_path, "w", encoding="utf-8") as f:
-            f.write(html)
-
-        return True
-
     
     def intersect_tokens_tesseract(self, img_path:str):
 
         """
-
-        Převede fakturu do formátu LayoutLMv3.
-
+        Vezme data na faktuře a sjednotí s daty z ocr
+        
         Vstupní boxy (self._tokens) jsou v 0 - 1000, OCR je v pixelech.
 
         Výstupní boxy jsou v rozlišení fotky
@@ -93,9 +82,6 @@ class Invoice(json_serializable, ABC):
         # 1. Získání OCR dat z Tesseractu (v pixelech)
 
         tess_tokens, tess_boxes, tess_boxes_norm = get_tesseract_words(img_path)
-
-
-
 
         # 2. Mapování tagů pomocí IoU
 
@@ -211,10 +197,6 @@ class Invoice(json_serializable, ABC):
             spans_tags.append(span_tags.from__token_id(final_tags[-1]).code)
             spans_token_ids.append(span_temp_token_ids)
 
-        #self._spans = spans
-
-        #self._tokens = [token(tok, box, token_tags.from_id(tag)) for tok, box, tag in zip(tess_tokens, tess_boxes, final_tags)]
-     
         return spans_token_ids, spans_boxes, spans_tags, tess_tokens, tess_boxes, final_tags
     
 
@@ -226,9 +208,6 @@ class Invoice(json_serializable, ABC):
     def to_json_donut(self)->dict:
         #projdu tokeny a pokud je tam span s tagem různým od 0 a neni jeho bounding box mimo, tak ho pridam do slovniku
         output_json = dict()
-
-
-        w_img, h_img = self._A4_W_PX, self._A4_H_PX
         
         for span_tag in list(span_tags):
             if span_tag in SPAN_TAGS_TO_IGNORE:
@@ -433,6 +412,73 @@ class Invoice(json_serializable, ABC):
     #--------------------------------METODY EXPORTU FAKTUR ---------------------------------
     #----------------------------------------KONEC------------------------------------------
 
+    #--------------------------------METODY IMPORTU FAKKTUR --------------------------------
+    def from_layoutlmv3(self, layoutlmv3_path:Path, file_path:Path) -> bool:
+        """
+        Načte tokeny, spany a segmenty z layoutlmv3 souboru a podle jména faktury
+        """
+
+        with open(layoutlmv3_path) as f:
+            for line in f:
+                record = json.loads(line)
+
+                if record["file_name"] != file_path.name:
+                    continue
+
+                # --- načtení tokenů ---
+
+                tokens = record["data"].get("tokens", None)
+                
+                if tokens:
+
+                    tok_texts = tokens["tokens"]
+                    tok_tags = tokens["tags"]
+                    tok_boxes = tokens["boxes"]
+
+                    for text, tag_id, box in zip(tok_texts, tok_tags, tok_boxes):
+                        tag_id:token_tags =  token_tags.from_id(tag_id)
+                        color = DEFAULT_TOKEN_COLOR if tag_id == token_tags.O else SET_TOKEN_COLOR
+                        
+                        self.append_token(GToken(None, text, box, tag_id, color))
+
+
+                # --- načtení spanů ---
+
+                spans = record["data"].get("spans", None)
+
+                if spans:
+
+                    sp_tokens = spans["token_ids"]#[[id prvního tokenu spanu 1, id druhého tokenu spanu 1], [id prvního tokenu spanu 2,...], [...], ...]
+                    sp_tags = spans["tags"]
+                    sp_boxes = spans["boxes"]
+                    
+                    for tokens_orig, tag_id, box in zip(sp_tokens, sp_tags, sp_boxes):
+                        tokens = [self._tokens[token_orig_id].id for token_orig_id in tokens_orig]
+                        self.append_span(GSpan(None, box, span_tags.from_id(tag_id), tokens,SET_SPAN_COLOR))
+
+
+                # --- načtení segmentů ---
+                segments = record["data"].get("segments", None)
+                
+                if segments:
+
+                    seg_tags = segments["tags"]
+                    seg_boxes = segments["boxes"]
+
+                    for seg_id, box in zip(seg_tags, seg_boxes):
+                        seg:segment_tags =  segment_tags.from_id(seg_id)
+                        color = DEFAULT_SEGMENT_COLOR if seg_id == segment_tags.O else SET_SEGMENT_COLOR
+                        
+                        self.append_segment(GSegment(None, box, seg, color))
+
+                return True
+        return False
+            
+                
+
+
+    #--------------------------------METODY IMPORTU FAKKTUR --------------------------------
+    #----------------------------------------KONEC------------------------------------------
 
     #------------------------POMOCNÉ METODY -------------------------
     #--- práce se strukturami reprezentující informace na faktuře ---
@@ -595,6 +641,26 @@ class Invoice(json_serializable, ABC):
         self._segments.append(segment)
         return True
 
+    def reset_token(self, token:GToken) -> bool:
+        """ nastaví výchozí tag tokenu"""
+        for tok in self._tokens:
+            if(tok == token):
+                tok.tag = token_tags.O
+                tok.color = DEFAULT_TOKEN_COLOR
+                
+                return True
+        return False
+    
+    def reset_tokens(self, *kwargs) -> bool:
+        """ Odstraní všechny spany a nastaví výchozí tag všem tokenům"""
+        for token in self._tokens:
+            token.tag = token_tags.O
+            token.color = DEFAULT_TOKEN_COLOR
+        
+        self.clear_spans()
+
+        return True
+
     def remove_token(self, token:GToken) -> bool:
         if token in self._tokens:
             self._tokens.remove(token)
@@ -642,4 +708,5 @@ class Invoice(json_serializable, ABC):
 
         return False
 
-        
+    def clear_spans(self) -> None:
+        self._spans = list()

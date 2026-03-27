@@ -5,7 +5,6 @@ from dataclasses import dataclass, field
 from invoices_generator.core.DInvoice import DInvoice
 from invoices_generator.core.enumerates.token_tags import TOKEN_TAGS_TO_IGNORE
 from invoice_annotator.utils.GSegment import GSegment
-from invoice_annotator import AppData
 from invoice_annotator.utils.GRelationship import GRelationship
 from invoice_annotator.utils.GSpan import GSpan
 from invoice_annotator.utils.GToken import GToken
@@ -13,15 +12,7 @@ from invoices_generator.core.enumerates.span_tags import span_tags
 
 @dataclass
 class GInvoice(DInvoice):
-
-
-    _segments: list[GSegment] = field(default_factory=list)
-
-    _selected_tokens: list[GToken] = field(default_factory=list)
-    _selected_spans: list[GSpan] = field(default_factory=list)
-    _selected_segments: list[GSegment] = field(default_factory=list)
-
-
+    
     #---------------PŘEPIS DĚDĚNÝCH METOD EXTRAKCE-------------------
     def to_json_layoutlmv3(self) -> str:
         tokens, tokens_boxes, tokens_tag_list = ([], [], []) if not self._tokens else map(list, zip(*(
@@ -68,12 +59,6 @@ class GInvoice(DInvoice):
     #---------------PŘEPIS DĚDĚNÝCH METOD EXTRAKCE-------------------
     #--------------------------KONEC---------------------------------
 
-    # -------------------------- pomocné metody --------------------------
-    #--- práce se strukturami reprezentující informace na faktuře ---
-
-    def clear_spans(self) -> None:
-        self._spans = list()
-
     #--- práce se strukturami reprezentující informace na faktuře ---
     #-------------------------KONEC----------------------------------
 
@@ -91,7 +76,7 @@ class GInvoice(DInvoice):
         text: list[str] = []
 
         for token_id in token_ids:
-            text.append(AppData.AppData.invoice.get_token_by_id(token_id).text)
+            text.append(self.get_token_by_id(token_id).text)
 
         return " ".join(text)
 

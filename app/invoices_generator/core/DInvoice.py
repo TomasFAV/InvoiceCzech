@@ -1,4 +1,6 @@
 from collections import defaultdict
+import json
+from pathlib import Path
 import re
 from dataclasses import dataclass, field
 import random
@@ -231,6 +233,103 @@ class DInvoice(Invoice, json_serializable):
 
 
         return output_json
+    
+    #--------------------------------METODY IMPORTU FAKKTUR --------------------------------
+    def from_donut(self, donut_path: Path, file_path:Path) -> bool:
+        
+        """Načte json informace z donut souboru pro file_path fakturu"""
+
+        with open(donut_path, "r", encoding="utf-8") as f:
+            for line in f:
+                raw_data = json.loads(line)
+
+                if raw_data["file_name"] != file_path.name:
+                    continue
+                
+                ground_truth:dict = raw_data.get("ground_truth", None)
+                if not ground_truth or not isinstance(ground_truth, dict):
+                    return False
+                
+                data:dict = ground_truth.get("gt_parse", None)
+                if not data or not isinstance(data, dict):
+                    return False
+
+
+                self.invoice_number = data.get("invoice_number", "")
+                
+                self.supplier.register_id = data.get("supp_register_id", "")
+                self.supplier.tax_id = data.get("supp_tax_id", "")
+
+                self.customer.register_id = data.get("cust_register_id", "")
+                self.customer.tax_id = data.get("cust_tax_id", "")
+
+                self.issue_date = data.get("issue_date", "")
+                self.taxable_supply_date = data.get("taxable_supply_date", "")
+                self.due_date = data.get("due_date", "")
+
+                self.payment_type = data.get("payment_type", "")
+                self.bank_account_number = data.get("bank_account_number", "")
+                self.bank_account.BIC = data.get("bic", "")
+                self.IBAN = data.get("iban", "")
+                self.variable_symbol = data.get("variable_symbol", "")
+                self.const_symbol = data.get("const_symbol", "")
+                self.total_price = data.get("total", "")        
+
+                return True
+        
+        return False
+    
+    def from_dict(self, data:dict[str, str]):
+        self.invoice_number = data.get("invoice_number", self.invoice_number)
+        self.variable_symbol = data.get("variable_symbol", self.variable_symbol)
+    
+        self.const_symbol = data.get("const_symbol", self.const_symbol)
+        self.issue_date = data.get("issue_date", self.issue_date)
+        self.taxable_supply_date = data.get("taxable_supply_date", self.taxable_supply_date)
+        self.due_date = data.get("due_date", self.due_date)
+        self.total_price = data.get("total", self.total_price)
+        self.IBAN = data.get("iban", self.IBAN)
+        
+        self.bank_account.BIC = data.get("bic", self.bank_account.BIC)
+
+        self.supplier.register_id = data.get("supp_register_id", self.supplier.register_id)
+        self.supplier.tax_id = data.get("supp_tax_id", self.supplier.tax_id)
+
+        self.customer.register_id = data.get("cust_register_id", self.customer.register_id)
+        self.customer.tax_id = data.get("cust_tax_id", self.customer.tax_id)
+
+        self.payment_type = data.get("payment_type", self.payment_type)
+        self.bank_account_number = data.get("bank_account_number", self.bank_account_number)
+
+    def to_dict(self)->dict[str,str]:
+        data:dict[str,str] = dict()
+        
+        data["invoice_number"] = self.invoice_number
+        
+        data["supp_register_id"] = self.supplier.register_id
+        data["supp_tax_id"] = self.supplier.tax_id
+
+        data["cust_register_id"] = self.customer.register_id
+        data["cust_tax_id"] = self.customer.tax_id
+
+        data["issue_date"] = self.issue_date
+        data["taxable_supply_date"] = self.taxable_supply_date
+        data["due_date"] = self.due_date
+
+        data["payment_type"] = self.payment_type
+        data["bank_account_number"] = self.bank_account_number
+
+        data["iban"] = self.IBAN
+        data["bic"] = self.bank_account.BIC
+
+        data["variable_symbol"] = self.variable_symbol
+        data["const_symbol"] = self.const_symbol
+        
+        data["total"] = self.total_price
+
+        return data
+    #--------------------------------METODY IMPORTU FAKKTUR --------------------------------
+    #----------------------------------------KONEC------------------------------------------
 
     def generate_img(self, output_path:str)->bool:
         """

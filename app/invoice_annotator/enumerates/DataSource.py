@@ -6,3 +6,6 @@ class DataSource(Enum):
     SPANS = "spans"
     RELATIONSHIP = "relationships"
     SEGMENTS = "segments"
+
+    def __str__(self):
+        return str(self.value)

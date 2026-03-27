@@ -1,4 +1,5 @@
 from tkinter import Tk, font, Frame
+from invoice_annotator.Session import Session
 from invoice_annotator.controller.ExportPageController import ExportPageController
 from invoice_annotator.view.pages.ExportPage import ExportPage
 from invoice_annotator.view.interfaces.IDataAnnotator import IMainWindow
@@ -26,6 +27,8 @@ class MainWindow(IMainWindow):
 
         self.title_font = font.Font(family='Helvetica', size=18, weight="bold", slant="italic")
 
+        self.session:Session = Session()
+
         self.__build_container()
         self.show_frame("HomePage")
 
@@ -38,10 +41,11 @@ class MainWindow(IMainWindow):
 
         for page, controller in [(HomePage, HomePageController), (ExportPage, ExportPageController)]:
             page:View = cast(View, page)
-            controller= controller()
+            controller:Controller = cast(Controller, controller)
+            controller:Controller = controller(self.session)
             
             page_name = page.__name__
-            frame = page(self, parent=self.container, controller=controller)
+            frame:View = page(self, parent=self.container, controller=controller)
             self.frames[page_name] = frame
 
             frame.grid(row=0, column=0, sticky="nsew")
@@ -51,6 +55,7 @@ class MainWindow(IMainWindow):
         frame:View = self.frames[page_name]
         frame.tkraise()
 
+        frame.boot_up()
         frame.full_redraw()
 
     

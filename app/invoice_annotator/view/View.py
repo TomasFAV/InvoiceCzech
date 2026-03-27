@@ -1,16 +1,17 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 import tkinter
+from tkinter.ttk import Frame
 from invoice_annotator.view.interfaces.IDataAnnotator import IMainWindow
 from invoice_annotator.controller.Controller import Controller
 
 
-class View(tkinter.Frame):
+class View(Frame, ABC):
     
-    def __init__(self, root:tkinter.Tk, parent:tkinter.Frame, controller:Controller,):
-        tkinter.Frame.__init__(self, master=parent)
+    def __init__(self, window:IMainWindow, parent:tkinter.Frame, controller:Controller|None = None, **kwargs):
+        Frame.__init__(self, master=parent, **kwargs)
         self.controller = controller
         self.parent = parent
-        self.window:IMainWindow = root
+        self.window:IMainWindow = window
 
     @abstractmethod
     def build(self) -> None:
@@ -22,4 +23,8 @@ class View(tkinter.Frame):
 
     @abstractmethod
     def full_redraw(self) -> None:
+        ...
+
+    @abstractmethod
+    def boot_up(self) -> None:
         ...

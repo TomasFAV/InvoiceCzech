@@ -55,4 +55,7 @@ class span_tags(Enum):
                 
         return cls.O
 
+    def __str__(self):
+        return self.text
+
 SPAN_TAGS_TO_IGNORE = [span_tags.VAT, span_tags.VAT_BASE, span_tags.VAT_PERCENTAGE]

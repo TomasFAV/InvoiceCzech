@@ -8,8 +8,8 @@ class LiltModel:
         
         self.__device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        #self.__model = AutoModelForTokenClassification.from_pretrained(model_path).to(self.__device)
-        #self.__tokenizer = AutoTokenizer.from_pretrained(model_path)
+        self.__model = AutoModelForTokenClassification.from_pretrained(model_path).to(self.__device)
+        self.__tokenizer = AutoTokenizer.from_pretrained(model_path)
 
     def predict(self, words, bboxes):
         """
