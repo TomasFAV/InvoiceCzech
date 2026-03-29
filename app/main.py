@@ -1,15 +1,16 @@
-from invoices_generator.invoice_enhancer import invoice_enhancer
+from client.Client import Client
+from invoices_generator.InvoiceEnhancer import InvoiceEnhancer
 from invoice_annotator.DataAnnotator import DataAnnotator
-from invoices_generator.invoice_generator import invoice_generator
-from ie_engine.enumerates.engines import engines
+from invoices_generator.InvoiceGenerator import InvoiceGenerator
 
 def main()->None:
     app = DataAnnotator()
+    #app = Client()
+    
     app.run()
 
-    #invoice_generator.generate(0, 0, 600)
-    
-    #invoice_enhancer.enhance("/home/tom-k/Desktop/faktury/training/ManualyAnotatedInvoices/metadata_layoutlmv3.jsonl", 5)
+    #InvoiceGenerator.generate(0, 0, 1)
+    #InvoiceEnhancer.enhance("/home/tom-k/Desktop/Zpracovani_faktur/app/data/validation/metadata_layoutlmv3.jsonl", 5)
 
 if __name__=="__main__":
     main()

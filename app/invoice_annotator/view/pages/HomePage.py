@@ -4,24 +4,22 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import tkinter
 from tkinter import simpledialog
-from typing import Any
-from invoice_annotator.utils.GSegment import GSegment
-from invoice_annotator.utils.GSpan import GSpan
-from invoice_annotator.utils.GToken import GToken
-from invoice_annotator.view.components.BoundingBoxLayer import Drawable
-from invoice_annotator.view.interfaces.IDataAnnotator import IMainWindow
-from invoice_annotator.utils.consts import CREATE_SEGMENT, CREATE_TOKEN, REMOVE, RESET, SEGMENT_TAG, SPAN_TAG, TOKEN_TAG
-from invoice_annotator.view.components.InvoiceCanvas import InvoiceCanvas, InvoiceCanvasConfig
-from invoice_annotator.view.components.TreeObjectNotebook import TreeObjectNotebook
-from invoice_annotator.view.components.ListBoxTabPanel import ListBoxTabPanel
-from invoice_annotator.view.components.Menu import Menu
-from shared.OperationResult import OperationResult
+from common.invoice.models.GSegment import GSegment
+from common.invoice.models.GSpan import GSpan
+from common.invoice.models.GToken import GToken
+from common.interfaces.IMainWindow import IMainWindow
+from common.utils.consts import CREATE_SEGMENT, CREATE_TOKEN, REMOVE, RESET, SEGMENT_TAG, SPAN_TAG, TOKEN_TAG
+from common.view.components.InvoiceCanvas import InvoiceCanvas, InvoiceCanvasConfig
+from common.view.components.TreeObjectNotebook import TreeObjectNotebook
+from common.view.components.ListBoxTabPanel import ListBoxTabPanel
+from common.view.components.Menu import Menu
+from common.invoice.OperationResult import OperationResult
 from invoice_annotator.controller.HomePageController import HomePageController
-from invoices_generator.core.enumerates.segment_tags import segment_tags
-from invoice_annotator.enumerates.DataSource import DataSource
-from invoice_annotator.view.View import View
-from invoices_generator.core.enumerates.span_tags import span_tags
-from invoices_generator.core.enumerates.token_tags import token_tags
+from common.enumerates.SegmentTag import SegmentTag
+from common.enumerates.DataSource import DataSource
+from common.view.View import View
+from common.enumerates.SpanTag import SpanTag
+from common.enumerates.TokenTag import TokenTag
 
 
 class HomePage(View):
@@ -115,12 +113,12 @@ class HomePage(View):
         
         self.invoice_canvas.partial_redraw()
 
-    def select_handler(self, tag:token_tags|span_tags|segment_tags) -> None:
-        if(isinstance(tag, token_tags)):
+    def select_handler(self, tag:TokenTag|SpanTag|SegmentTag) -> None:
+        if(isinstance(tag, TokenTag)):
             result = self.controller.apply_tag_to_token_selection(tag)
-        elif(isinstance(tag, span_tags)):
+        elif(isinstance(tag, SpanTag)):
             result = self.controller.apply_tag_to_span_selection(tag)
-        elif(isinstance(tag, segment_tags)):
+        elif(isinstance(tag, SegmentTag)):
             result = self.controller.apply_tag_to_segment_selection(tag)
         
         if not result.ok:
@@ -207,9 +205,9 @@ class HomePage(View):
 
         self.labels_panel = ListBoxTabPanel(self.panedwindow, 
                                             {
-                                                DataSource.TOKENS: [tag for tag in list(token_tags)],
-                                                DataSource.SPANS: [tag for tag in list(span_tags)[1:]],
-                                                DataSource.SEGMENTS: [tag for tag in list(segment_tags)]
+                                                DataSource.TOKENS: [tag for tag in list(TokenTag)],
+                                                DataSource.SPANS: [tag for tag in list(SpanTag)[1:]],
+                                                DataSource.SEGMENTS: [tag for tag in list(SegmentTag)]
                                             },select_handler=self.select_handler, window=self.window, parent_view=self)
 
         # Střed: toolbar + canvas_view

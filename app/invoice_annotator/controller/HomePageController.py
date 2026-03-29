@@ -1,21 +1,21 @@
 import os
 from pathlib import Path
 
-from invoice_annotator.Session import Session
-from invoice_annotator.utils.GTesseract import GTesseract, TesseractConfig
-from invoice_annotator.view.components.BoundingBoxLayer import Drawable
-from shared.OperationResult import OperationResult
-from invoice_annotator.utils.consts import DEFAULT_SEGMENT_COLOR, DEFAULT_SPAN_COLOR, DEFAULT_TOKEN_COLOR, SELECTED_SEGMENT_COLOR
-from invoice_annotator.utils.consts import SELECTED_SPAN_COLOR, SELECTED_TOKEN_COLOR, SET_SEGMENT_COLOR, SET_SPAN_COLOR, SET_TOKEN_COLOR
-from invoice_annotator.utils.GSegment import GSegment
-from invoices_generator.core.enumerates.segment_tags import segment_tags
-from invoice_annotator.AI.LiltModel import LiltModel
-from invoice_annotator.controller.Controller import Controller
-from invoice_annotator.utils.GSpan import GSpan
-from invoice_annotator.utils.GToken import GToken
-from invoice_annotator.utils.union_bbox import union_bbox
-from invoices_generator.core.enumerates.span_tags import span_tags
-from invoices_generator.core.enumerates.token_tags import token_tags
+from common.utils.utilities import union_bbox
+from common.Session import Session
+from common.utils.GTesseract import GTesseract, TesseractConfig
+from common.view.components.BoundingBoxLayer import Drawable
+from common.invoice.OperationResult import OperationResult
+from common.utils.consts import DEFAULT_SEGMENT_COLOR, DEFAULT_SPAN_COLOR, DEFAULT_TOKEN_COLOR, SELECTED_SEGMENT_COLOR
+from common.utils.consts import SELECTED_SPAN_COLOR, SELECTED_TOKEN_COLOR, SET_SEGMENT_COLOR, SET_SPAN_COLOR, SET_TOKEN_COLOR
+from common.invoice.models.GSegment import GSegment
+from common.enumerates.SegmentTag import SegmentTag
+from common.models.LiltModel import LiltModel
+from common.controller.Controller import Controller
+from common.invoice.models.GSpan import GSpan
+from common.invoice.models.GToken import GToken
+from common.enumerates.SpanTag import SpanTag
+from common.enumerates.TokenTag import TokenTag
 
 
 class HomePageController(Controller):
@@ -50,26 +50,27 @@ class HomePageController(Controller):
         if not layoutlmv3_path.exists():
             return False
         
-        layout_result:bool = self.session.invoice.from_layoutlmv3(layoutlmv3_path, file_path)
+        
+        layout_result:bool = self.invoice_from_layoutlmv3(self.session.invoice, layoutlmv3_path, file_path)
 
         donut_path = Path(os.path.join(parent_path, "metadata_donut.jsonl"))
         if not donut_path.exists():
             return False
 
-        donut_result:bool = self.session.invoice.from_donut(donut_path, file_path)
+        donut_result:bool =  self.invoice_data_from_donut(self.session.invoice_data, donut_path, file_path)
 
         return layout_result and donut_result #buď se podařilo načíst obojí => True, jinak False
 
 
     def extract_img_text(self, img_path:str, preprocess_with_ai:bool = False) -> bool:        
         text, bbox, bbox_norm = self.pytesseract.extract_text(Path(img_path))
-        tags = self.ai_assistant.predict(text, bbox_norm)
+        tags = self.ai_assistant.predict_labels(text, bbox_norm)
         #tags = list()
 
         for i, _ in enumerate(bbox):
-            tag:token_tags =  token_tags.from_id(tags[i]) if i < len(tags) else token_tags.O
-            color = DEFAULT_TOKEN_COLOR if tag == token_tags.O else SET_TOKEN_COLOR 
-            self.append_token(GToken(None, text[i], bbox[i], token_tags.from_id(tags[i]) if i < len(tags) else token_tags.O, color))
+            tag:TokenTag =  TokenTag.from_id(tags[i]) if i < len(tags) else TokenTag.O
+            color = DEFAULT_TOKEN_COLOR if tag == TokenTag.O else SET_TOKEN_COLOR 
+            self.append_token(GToken(None, text[i], bbox[i], TokenTag.from_id(tags[i]) if i < len(tags) else TokenTag.O, color))
 
         return True
 
@@ -112,7 +113,7 @@ class HomePageController(Controller):
 
         return OperationResult(True)
 
-    def apply_tag(self, items:list[Drawable], tag: token_tags | span_tags | segment_tags|None, default_tag:token_tags | span_tags | segment_tags, default_color:str, set_color:str):
+    def apply_tag(self, items:list[Drawable], tag: TokenTag | SpanTag | SegmentTag|None, default_tag:TokenTag | SpanTag | SegmentTag, default_color:str, set_color:str):
         for item in items:
             if tag:
                 item.tag = tag
@@ -121,28 +122,28 @@ class HomePageController(Controller):
         items.clear()
         return True
 
-    def apply_tag_to_token_selection(self, tag: token_tags)->OperationResult:
-        ok = self.apply_tag(self.get_selected_tokens().passed_value, tag=tag, default_tag=token_tags.O, default_color=DEFAULT_TOKEN_COLOR, set_color=SET_TOKEN_COLOR)
+    def apply_tag_to_token_selection(self, tag: TokenTag)->OperationResult:
+        ok = self.apply_tag(self.get_selected_tokens().passed_value, tag=tag, default_tag=TokenTag.O, default_color=DEFAULT_TOKEN_COLOR, set_color=SET_TOKEN_COLOR)
         return OperationResult(ok)
     
-    def apply_tag_to_span_selection(self, tag:span_tags)->OperationResult:
+    def apply_tag_to_span_selection(self, tag:SpanTag)->OperationResult:
         if len(self.get_selected_spans().passed_value) == 0 and len(self.get_selected_tokens().passed_value) != 0:
             selected_tokens = self.get_selected_tokens().passed_value
             self.append_span(GSpan(None, union_bbox([token.b_box for token in selected_tokens]), tag, [token.id for token in selected_tokens],SET_SPAN_COLOR))
 
-            ok = self.apply_tag(selected_tokens, tag=None, default_tag=token_tags.O, default_color=DEFAULT_TOKEN_COLOR, set_color=SET_TOKEN_COLOR)
+            ok = self.apply_tag(selected_tokens, tag=None, default_tag=TokenTag.O, default_color=DEFAULT_TOKEN_COLOR, set_color=SET_TOKEN_COLOR)
         else:
-            ok = self.apply_tag(self.get_selected_spans().passed_value, tag=tag, default_tag=span_tags.O, default_color=DEFAULT_SPAN_COLOR, set_color=SET_SPAN_COLOR) 
+            ok = self.apply_tag(self.get_selected_spans().passed_value, tag=tag, default_tag=SpanTag.O, default_color=DEFAULT_SPAN_COLOR, set_color=SET_SPAN_COLOR) 
         return OperationResult(ok)
     
-    def apply_tag_to_segment_selection(self, tag:segment_tags)->OperationResult:
-        ok = self.apply_tag(self.get_selected_segments().passed_value, tag=tag, default_tag=segment_tags.O, default_color=DEFAULT_SEGMENT_COLOR, set_color=SET_SEGMENT_COLOR)
+    def apply_tag_to_segment_selection(self, tag:SegmentTag)->OperationResult:
+        ok = self.apply_tag(self.get_selected_segments().passed_value, tag=tag, default_tag=SegmentTag.O, default_color=DEFAULT_SEGMENT_COLOR, set_color=SET_SEGMENT_COLOR)
         return OperationResult(ok)
 
     def create_spans_from_annotated_tokens(self)->None:
         for token in self.get_tokens().passed_value:
-            if token.tag == token_tags.O or token.tag.code % 2 == 0:
+            if token.tag == TokenTag.O or token.tag.code % 2 == 0:
                 continue
 
             if not self.is_in_spans(token).passed_value:
-                self.append_span(GSpan(None, token.b_box, span_tags.from__token_id(token.tag.code), [token.id], SET_SPAN_COLOR))
+                self.append_span(GSpan(None, token.b_box, SpanTag.from__token_id(token.tag.code), [token.id], SET_SPAN_COLOR))

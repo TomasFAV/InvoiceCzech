@@ -5,9 +5,9 @@ from PIL import Image, ImageDraw, ImageFont
 
 # --- KONFIGURACE ---
 # V souboru prd.py změň:
-JSONL_PATH = "./app/data/test/metadata_layoutlmv3.jsonl" # Opraveno 'validation'
+JSONL_PATH = "./app/data/validation/metadata_layoutlmv3.jsonl" # Opraveno 'validation'
 # A ujisti se, že obrázky jsou taky správně:
-IMAGES_DIR = "./app/data/test/images/"          # Složka s obrázky
+IMAGES_DIR = "./app/data/validation/images/"          # Složka s obrázky
 OUTPUT_DIR = "visualized_output/"      # Kam se uloží vykreslené obrázky
 
 # Tvůj maping ID -> Název (uprav podle svého Enumu)

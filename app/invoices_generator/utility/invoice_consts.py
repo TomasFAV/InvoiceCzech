@@ -1,7 +1,9 @@
 from typing import List, Tuple
-from invoices_generator.core.bank import bank
-from invoices_generator.core.enumerates.banks import banks
-from invoices_generator.core.enumerates.company_type import company_type  
+from invoices_generator.core.enumerates.BankType import BankType
+from invoices_generator.core.enumerates.CompanyType import CompanyType  
+
+_A4_W_PX:int = 1654 
+_A4_H_PX:int = 2338
 
 # Barvy
 INK = (17, 17, 17)
@@ -1155,9 +1157,9 @@ city_names: list[str] = [
     "Police nad Metují",
 ]
 
-company_types:list[company_type] = [ct for ct in company_type]
+company_types:list[CompanyType] = [ct for ct in CompanyType]
 
-banks_:list[bank] = [bn.value for bn in banks]
+banks_:list[BankType] = [bn.value for bn in BankType]
 payments:list = [
     # Hotovost / dobírka
     "hotově",

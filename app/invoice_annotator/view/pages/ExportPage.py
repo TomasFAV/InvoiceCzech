@@ -5,13 +5,11 @@ from tkinter import filedialog
 from typing import Any
 
 from pathlib import Path
-from invoices_generator.core.enumerates.span_tags import span_tags
-from invoice_annotator.view.components.ExportInvoiceCanvas import ExportInvoiceCanvas
+from common.view.components.ExportInvoiceCanvas import ExportInvoiceCanvas
 from invoice_annotator.controller.ExportPageController import ExportPageController
-from invoice_annotator.view.components.InvoiceForm import Form, FormConfig
-from shared.OperationResult import OperationResult
-from invoice_annotator.view.View import View
-from invoice_annotator.AppData import AppData
+from common.view.components.InvoiceForm import Form, FormConfig
+from common.invoice.OperationResult import OperationResult
+from common.view.View import View
 
 
 class ExportPage(View):
@@ -40,9 +38,6 @@ class ExportPage(View):
     def update_status(self, msg: str) -> None:
         self.status.config(text=msg)
 
-    def display_text(self) -> None:
-        self.export_invoice_canvas.display_text()
-
     def partial_redraw(self) -> None:
         self.export_invoice_canvas.partial_redraw()
         self.invoice_form.partial_redraw()
@@ -66,7 +61,7 @@ class ExportPage(View):
         for key, value in self.controller.get_invoice_dict_from_spans().items():
             self.form_data[key] = value
         
-        self.invoice_form.full_redraw()
+        self.invoice_form.partial_redraw()
 
     def export_invoice(self):
         if not self.controller.session.image_path:
