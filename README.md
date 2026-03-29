@@ -54,3 +54,41 @@ Podporované modely:
     │ └── controller/ # aplikační logika
     ├── invoices_generator/ # generování datasetu
     ├── invoice_annotator/ # anotace dat
+
+## Přístupy
+### OCR + klasifikace tokenů
+
+vstup: text + bounding boxy
+výstup: labely tokenů
+
+#### Modely:
+
+   - BERT
+   - LiLT
+   - LayoutLMv3
+    
+### End-to-End modely
+    
+vstup: obrázek
+výstup: strukturovaný JSON
+
+#### Modely:
+
+   - Donut
+   - Pix2Struct
+
+## Poznámky
+modely se stahují z Hugging Face → první spuštění může být pomalejší
+GPU (CUDA) výrazně zrychlí inference
+kvalita OCR zásadně ovlivňuje výsledky
+
+## Autor
+
+Tomáš Brabec
+
+Bakalářská projekt:
+**Metody extrakce informací pro analýzu faktur**
+
+## Licence
+
+Projekt je určen pro studijní a výzkumné účely.
