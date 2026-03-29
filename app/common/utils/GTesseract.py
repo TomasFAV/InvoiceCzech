@@ -1,5 +1,7 @@
 from dataclasses import dataclass
+import os
 from pathlib import Path
+import shutil
 import sys
 from PIL import Image
 import pytesseract
@@ -23,12 +25,51 @@ class GTesseract:
 
         pass
 
+
     def __config__tesseract(self):
         
-        if sys.platform == "linux":
-            pass
-        elif sys.platform == "win32":
-            pytesseract.pytesseract.tesseract_cmd = self.config.tesseract_exe_path
+        candidates = []
+
+        #PATH (funguje na všech OS)
+        path = shutil.which("tesseract")
+        if path:
+            candidates.append(path)
+
+        #ENV proměnná (uživatel si může nastavit vlastní cestu)
+        env_path = os.getenv("TESSERACT_CMD")
+        if env_path:
+            candidates.append(env_path)
+
+        #OS specifické fallbacky
+        if sys.platform == "win32":
+            candidates.extend([
+                r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+                r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+            ])
+        elif sys.platform.startswith("linux"):
+            candidates.extend([
+                "/usr/bin/tesseract",
+                "/usr/local/bin/tesseract",
+            ])
+        elif sys.platform == "darwin":  # macOS
+            candidates.extend([
+                "/opt/homebrew/bin/tesseract",
+                "/usr/local/bin/tesseract",
+            ])
+
+        #Najdi první existující
+        for candidate in candidates:
+            if candidate and os.path.isfile(candidate):
+                pytesseract.pytesseract.tesseract_cmd = candidate
+                return
+
+        raise RuntimeError(
+            "Tesseract OCR nebyl nalezen.\n"
+            "Řešení:\n"
+            "- nainstaluj Tesseract\n"
+            "- nebo ho přidej do PATH\n"
+            "- nebo nastav TESSERACT_CMD"
+        )
         
 
     def extract_text(self, img_path:Path, min_confidence:int = 30) -> tuple[list[str], list[tuple[int, int, int, int]], list[tuple[int, int, int, int]]]:               

@@ -4,8 +4,8 @@ from invoice_annotator.DataAnnotator import DataAnnotator
 from invoices_generator.InvoiceGenerator import InvoiceGenerator
 
 def main()->None:
-    app = DataAnnotator()
-    #app = Client()
+    #app = DataAnnotator()
+    app = Client()
     
     app.run()
 
