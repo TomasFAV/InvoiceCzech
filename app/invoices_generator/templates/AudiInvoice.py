@@ -9,12 +9,12 @@ from PIL import Image, ImageDraw
 
 from common.invoice.models.Invoice import Invoice
 from common.invoice.models.InvoiceData import InvoiceData
-from common.invoice.Renderers.TextRenderer import TextRenderer
+from common.invoice.renderers.TextRenderer import TextRenderer
 from common.invoice.models.InvoiceTemplate import InvoiceTemplate
 
 from common.enumerates.SpanTag import SpanTag
-from invoices_generator.utility.invoice_consts import _A4_H_PX, _A4_W_PX, INK, MUTED, LINE, LINE_MID, LINE_STRONG, BG
-from invoices_generator.utility.utils import mm, safe, fmt_money
+from common.utils.consts import _A4_H_PX, _A4_W_PX, INK, MUTED, LINE, LINE_MID, LINE_STRONG, BG
+from common.utils.utilities import mm, safe, fmt_money
 
 
 # =============================================================================
@@ -180,10 +180,10 @@ class AudiInvoice(InvoiceTemplate):
             d.ellipse((cx - ring_r, cy - ring_r, cx + ring_r, cy + ring_r), outline=INK, width=2)
             cx += (2 * ring_r - ring_gap)
 
-        textRenderer._text(invoice, d, (logo_x + mm(8), logo_y + mm(12)), "Audi", font=textRenderer._f14b, fill=(200, 0, 0))
+        textRenderer._text(invoice, (logo_x + mm(8), logo_y + mm(12)), "Audi", font=textRenderer._f14b, fill=(200, 0, 0))
 
         title_center_x = _A4_W_PX // 2
-        textRenderer._text_center(invoice, d, title_center_x, y + mm(16), "Daňový doklad", textRenderer._f16b, INK)
+        textRenderer._text_center(invoice, title_center_x, y + mm(16), "Daňový doklad", textRenderer._f16b, INK)
 
         doc_no = safe(getattr(data, "invoice_number", getattr(data, "document_number", "")))
         textRenderer._text_right(
@@ -220,16 +220,16 @@ class AudiInvoice(InvoiceTemplate):
 
         # LEFT: Dodavatel
         cur = y + pad
-        textRenderer._text(invoice, d, (left_x0 + pad, cur), "Dodavatel", font=textRenderer._f11b, fill=INK)
+        textRenderer._text(invoice, (left_x0 + pad, cur), "Dodavatel", font=textRenderer._f11b, fill=INK)
         hline(cur + mm(4.5), left_x0 + pad, left_x1 - pad, "thin")
         cur += mm(7)
 
-        textRenderer._text(invoice, d, (left_x0 + pad, cur), safe(data.supplier.name), font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (left_x0 + pad, cur), safe(data.supplier.name), font=textRenderer._f10, fill=INK)
         cur += mm(5)
-        textRenderer._text(invoice, d, (left_x0 + pad, cur), safe(data.supplier.address), font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (left_x0 + pad, cur), safe(data.supplier.address), font=textRenderer._f10, fill=INK)
         cur += mm(5)
 
-        textRenderer._text(invoice, d, (left_x0 + pad, cur), "IČ:", font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (left_x0 + pad, cur), "IČ:", font=textRenderer._f10, fill=INK)
         textRenderer._text(
             invoice,
             d,
@@ -240,7 +240,7 @@ class AudiInvoice(InvoiceTemplate):
             span_tag=SpanTag.SUPPLIER_REGISTER_ID,
         )
 
-        textRenderer._text(invoice, d, (left_x0 + pad, cur + mm(10)), "DIČ:", font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (left_x0 + pad, cur + mm(10)), "DIČ:", font=textRenderer._f10, fill=INK)
         textRenderer._text(
             invoice,
             d,
@@ -262,8 +262,8 @@ class AudiInvoice(InvoiceTemplate):
 
         def meta_row(label: str, value: str, tag: SpanTag = SpanTag.O) -> None:
             nonlocal my
-            textRenderer._text(invoice, d, (mx0, my), label, font=textRenderer._f9, fill=INK)
-            textRenderer._text_right(invoice, d, mvx, my, safe(value), textRenderer._f9b, INK, span_tag=tag)
+            textRenderer._text(invoice, (mx0, my), label, font=textRenderer._f9, fill=INK)
+            textRenderer._text_right(invoice, mvx, my, safe(value), textRenderer._f9b, INK, span_tag=tag)
             my += mm(4.8)
 
         meta_row("Číslo dokladu:    (var. symbol)", doc_no, SpanTag.VARIABLE_SYMBOL)
@@ -277,20 +277,20 @@ class AudiInvoice(InvoiceTemplate):
         cx0 = right_x0 + pad + mm(3)
         cy = cust_y0 + mm(2.5)
 
-        textRenderer._text(invoice, d, (cx0, cy), "Odběratel", font=textRenderer._f10b, fill=INK)
+        textRenderer._text(invoice, (cx0, cy), "Odběratel", font=textRenderer._f10b, fill=INK)
         cy += mm(5.5)
 
         cust_id = safe(getattr(data.customer, "customer_id", getattr(data, "customer_id", "")))
         if cust_id:
-            textRenderer._text(invoice, d, (cx0, cy), cust_id, font=textRenderer._f9b, fill=INK)
+            textRenderer._text(invoice, (cx0, cy), cust_id, font=textRenderer._f9b, fill=INK)
             cy += mm(4.8)
 
-        textRenderer._text(invoice, d, (cx0, cy), safe(data.customer.name), font=textRenderer._f10b, fill=INK)
+        textRenderer._text(invoice, (cx0, cy), safe(data.customer.name), font=textRenderer._f10b, fill=INK)
         cy += mm(4.8)
-        textRenderer._text(invoice, d, (cx0, cy), safe(data.customer.address), font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (cx0, cy), safe(data.customer.address), font=textRenderer._f10, fill=INK)
 
         cy += mm(5)
-        textRenderer._text(invoice, d, (cx0, cy), "IČ/RČ:", font=textRenderer._f9, fill=INK)
+        textRenderer._text(invoice, (cx0, cy), "IČ/RČ:", font=textRenderer._f9, fill=INK)
         textRenderer._text(
             invoice,
             d,
@@ -302,7 +302,7 @@ class AudiInvoice(InvoiceTemplate):
         )
 
         cy += mm(5)
-        textRenderer._text(invoice, d, (cx0, cy), "DIČ:", font=textRenderer._f9, fill=INK)
+        textRenderer._text(invoice, (cx0, cy), "DIČ:", font=textRenderer._f9, fill=INK)
         textRenderer._text(
             invoice,
             d,
@@ -325,7 +325,7 @@ class AudiInvoice(InvoiceTemplate):
 
         # LEFT
         cur = y + pad
-        textRenderer._text(invoice, d, (left_x0 + pad, cur), "Bankovní spojení", font=textRenderer._f11b, fill=INK)
+        textRenderer._text(invoice, (left_x0 + pad, cur), "Bankovní spojení", font=textRenderer._f11b, fill=INK)
 
         bank_name = (
             safe(getattr(data.bank_account, "name", ""))
@@ -333,7 +333,7 @@ class AudiInvoice(InvoiceTemplate):
             else safe(getattr(data, "bank_name", ""))
         )
         if bank_name:
-            textRenderer._text_right(invoice, d, left_x1 - pad, cur, bank_name, textRenderer._f10, INK)
+            textRenderer._text_right(invoice, left_x1 - pad, cur, bank_name, textRenderer._f10, INK)
 
         hline(cur + mm(4.5), left_x0 + pad, left_x1 - pad, "thin")
         cur += mm(7)
@@ -357,7 +357,7 @@ class AudiInvoice(InvoiceTemplate):
         )
         cur += mm(5)
 
-        textRenderer._text(invoice, d, (left_x0 + pad, cur), "IBAN:", font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (left_x0 + pad, cur), "IBAN:", font=textRenderer._f10, fill=INK)
         textRenderer._text(
             invoice,
             d,
@@ -369,7 +369,7 @@ class AudiInvoice(InvoiceTemplate):
         )
         cur += mm(5)
 
-        textRenderer._text(invoice, d, (left_x0 + pad, cur), "SWIFT:", font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (left_x0 + pad, cur), "SWIFT:", font=textRenderer._f10, fill=INK)
         textRenderer._text(
             invoice,
             d,
@@ -382,13 +382,13 @@ class AudiInvoice(InvoiceTemplate):
 
         # RIGHT
         cur = y + pad
-        textRenderer._text(invoice, d, (right_x0 + pad, cur), "Dodací a platební podmínky", font=textRenderer._f11b, fill=INK)
+        textRenderer._text(invoice, (right_x0 + pad, cur), "Dodací a platební podmínky", font=textRenderer._f11b, fill=INK)
         hline(cur + mm(4.5), right_x0 + pad, right_x1 - pad, "thin")
         cur += mm(7)
 
         def cond_row(label: str, value: str, tag: SpanTag = SpanTag.O) -> None:
             nonlocal cur
-            textRenderer._text(invoice, d, (right_x0 + pad, cur), label, font=textRenderer._f10, fill=INK)
+            textRenderer._text(invoice, (right_x0 + pad, cur), label, font=textRenderer._f10, fill=INK)
             textRenderer._text(
                 invoice,
                 d,
@@ -427,7 +427,7 @@ class AudiInvoice(InvoiceTemplate):
 
         vy = y + mm(3.2)
 
-        textRenderer._text(invoice, d, (xs[0] + mm(2), vy), "Číslo karoserie:", textRenderer._f9, INK)
+        textRenderer._text(invoice, (xs[0] + mm(2), vy), "Číslo karoserie:", textRenderer._f9, INK)
         textRenderer._text(
             invoice,
             d,
@@ -438,9 +438,9 @@ class AudiInvoice(InvoiceTemplate):
             span_tag=SpanTag.VIN if hasattr(SpanTag, "VIN") else SpanTag.O,
         )
 
-        textRenderer._text(invoice, d, (xs[1] + mm(2), vy), "Tech. průkaz:", textRenderer._f9, INK)
+        textRenderer._text(invoice, (xs[1] + mm(2), vy), "Tech. průkaz:", textRenderer._f9, INK)
 
-        textRenderer._text(invoice, d, (xs[2] + mm(2), vy), "RZ:", textRenderer._f9, INK)
+        textRenderer._text(invoice, (xs[2] + mm(2), vy), "RZ:", textRenderer._f9, INK)
         textRenderer._text(
             invoice,
             d,
@@ -451,7 +451,7 @@ class AudiInvoice(InvoiceTemplate):
             span_tag=SpanTag.LICENSE_PLATE if hasattr(SpanTag, "LICENSE_PLATE") else SpanTag.O,
         )
 
-        textRenderer._text(invoice, d, (xs[3] + mm(2), vy), "Barva:", textRenderer._f9, INK)
+        textRenderer._text(invoice, (xs[3] + mm(2), vy), "Barva:", textRenderer._f9, INK)
         textRenderer._text(
             invoice,
             d,
@@ -461,7 +461,7 @@ class AudiInvoice(InvoiceTemplate):
             INK,
         )
 
-        textRenderer._text(invoice, d, (xs[4] + mm(2), vy), "Číslo komise:", textRenderer._f9, INK)
+        textRenderer._text(invoice, (xs[4] + mm(2), vy), "Číslo komise:", textRenderer._f9, INK)
         textRenderer._text(
             invoice,
             d,
@@ -471,7 +471,7 @@ class AudiInvoice(InvoiceTemplate):
             INK,
         )
 
-        textRenderer._text(invoice, d, (xs[5] + mm(2), vy), "Vyřizuje:", textRenderer._f9, INK)
+        textRenderer._text(invoice, (xs[5] + mm(2), vy), "Vyřizuje:", textRenderer._f9, INK)
         textRenderer._text(
             invoice,
             d,
@@ -481,7 +481,7 @@ class AudiInvoice(InvoiceTemplate):
             INK,
         )
 
-        textRenderer._text(invoice, d, (xs[6] + mm(2), vy), "Telefon:", textRenderer._f9, INK)
+        textRenderer._text(invoice, (xs[6] + mm(2), vy), "Telefon:", textRenderer._f9, INK)
         textRenderer._text(
             invoice,
             d,
@@ -497,7 +497,7 @@ class AudiInvoice(InvoiceTemplate):
         # TABULKA POLOŽEK
         # =====================================================================
 
-        textRenderer._text(invoice, d, (content_x0, y), "Fakturujeme Vám přihlášení vozu", font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (content_x0, y), "Fakturujeme Vám přihlášení vozu", font=textRenderer._f10, fill=INK)
         y += mm(6)
 
         headers = ["Název", "Množství mj", "Základ/mj", "Zákl. DPH", "% DPH", "DPH", "Celkem vč. DPH"]
@@ -550,9 +550,9 @@ class AudiInvoice(InvoiceTemplate):
             vat = fmt_money(getattr(it, "vat", 0))
             total = fmt_money(getattr(it, "price_with_vat", getattr(it, "total", 0)))
 
-            textRenderer._text(invoice, d, (xs[0] + mm(2), y), name, textRenderer._f10, INK)
-            textRenderer._text_right(invoice, d, xs[1] + col_ws[1] - mm(2), y, qty, textRenderer._f10, INK)
-            textRenderer._text_right(invoice, d, xs[2] + col_ws[2] - mm(2), y, base_mj, textRenderer._f10, INK)
+            textRenderer._text(invoice, (xs[0] + mm(2), y), name, textRenderer._f10, INK)
+            textRenderer._text_right(invoice, xs[1] + col_ws[1] - mm(2), y, qty, textRenderer._f10, INK)
+            textRenderer._text_right(invoice, xs[2] + col_ws[2] - mm(2), y, base_mj, textRenderer._f10, INK)
             textRenderer._text_right(
                 invoice, d, xs[3] + col_ws[3] - mm(2), y, base, textRenderer._f10, INK, span_tag=SpanTag.O
             )
@@ -562,7 +562,7 @@ class AudiInvoice(InvoiceTemplate):
             textRenderer._text_right(
                 invoice, d, xs[5] + col_ws[5] - mm(2), y, vat, textRenderer._f10, INK, span_tag=SpanTag.O
             )
-            textRenderer._text_right(invoice, d, xs[6] + col_ws[6] - mm(2), y, total, textRenderer._f10, INK)
+            textRenderer._text_right(invoice, xs[6] + col_ws[6] - mm(2), y, total, textRenderer._f10, INK)
 
             y += row_h
             hline(y, content_x0, content_x1, "thin")
@@ -582,7 +582,7 @@ class AudiInvoice(InvoiceTemplate):
         recap_h = mm(24) + mm(6) * vat_rows
         rect(rx0, ry0, rx1, ry0 + recap_h, "mid")
 
-        textRenderer._text(invoice, d, (rx0 + mm(2), ry0 + mm(2)), "Rekapitulace DPH", textRenderer._f10b, INK)
+        textRenderer._text(invoice, (rx0 + mm(2), ry0 + mm(2)), "Rekapitulace DPH", textRenderer._f10b, INK)
 
         cols = ["Sazba DPH", "Základ daně", "DPH", "Celkem"]
         cfr = [0.25, 0.27, 0.24, 0.24]
@@ -596,9 +596,9 @@ class AudiInvoice(InvoiceTemplate):
 
         for i, c in enumerate(cols):
             if i == 0:
-                textRenderer._text(invoice, d, (cxs[0] + cws[0] - mm(20), header_y), c, textRenderer._f9, INK)
+                textRenderer._text(invoice, (cxs[0] + cws[0] - mm(20), header_y), c, textRenderer._f9, INK)
             else:
-                textRenderer._text(invoice, d, (cxs[i] + cws[i] - mm(20), header_y), c, textRenderer._f9b, INK)
+                textRenderer._text(invoice, (cxs[i] + cws[i] - mm(20), header_y), c, textRenderer._f9b, INK)
 
         row_y = header_y + mm(7)
         for v in getattr(data, "vat", [])[:3]:
@@ -619,7 +619,7 @@ class AudiInvoice(InvoiceTemplate):
                 invoice, d, (cxs[2] + cws[2] - mm(20), row_y), vatv, textRenderer._f9, INK,
                 span_tag=SpanTag.O
             )
-            textRenderer._text(invoice, d, (cxs[3] + cws[3] - mm(20), row_y), tot, textRenderer._f9, INK)
+            textRenderer._text(invoice, (cxs[3] + cws[3] - mm(20), row_y), tot, textRenderer._f9, INK)
             row_y += mm(6)
 
         y = ry0 + recap_h + mm(10)
@@ -633,16 +633,16 @@ class AudiInvoice(InvoiceTemplate):
         hline(sig_y + mm(18), content_x0, content_x0 + int(content_w * 0.40), "thin")
         hline(sig_y + mm(18), content_x0 + int(content_w * 0.55), content_x1, "thin")
 
-        textRenderer._text(invoice, d, (content_x0, sig_y), "Fakturu převzal:", textRenderer._f10, INK)
+        textRenderer._text(invoice, (content_x0, sig_y), "Fakturu převzal:", textRenderer._f10, INK)
 
         issuer = safe(getattr(data, "issuer", getattr(data, "handler", "")))
-        textRenderer._text(invoice, d, (content_x0 + int(content_w * 0.45), sig_y), "Fakturoval:", textRenderer._f10, INK)
-        textRenderer._text(invoice, d, (content_x0 + int(content_w * 0.57), sig_y), issuer, textRenderer._f10, INK)
+        textRenderer._text(invoice, (content_x0 + int(content_w * 0.45), sig_y), "Fakturoval:", textRenderer._f10, INK)
+        textRenderer._text(invoice, (content_x0 + int(content_w * 0.57), sig_y), issuer, textRenderer._f10, INK)
 
-        textRenderer._text_center(invoice, d, content_x0 + int(content_w * 0.20), sig_y + mm(20), "Zákazník", textRenderer._f10, INK)
-        textRenderer._text_center(invoice, d, content_x0 + int(content_w * 0.78), sig_y + mm(20), safe(data.supplier.name), textRenderer._f10, INK)
+        textRenderer._text_center(invoice, content_x0 + int(content_w * 0.20), sig_y + mm(20), "Zákazník", textRenderer._f10, INK)
+        textRenderer._text_center(invoice, content_x0 + int(content_w * 0.78), sig_y + mm(20), safe(data.supplier.name), textRenderer._f10, INK)
 
-        textRenderer._text_center(invoice, d, _A4_W_PX / 2, _A4_H_PX - margin_b - mm(8), "Strana 1 / 2", textRenderer._f9, INK)
+        textRenderer._text_center(invoice, _A4_W_PX / 2, _A4_H_PX - margin_b - mm(8), "Strana 1 / 2", textRenderer._f9, INK)
         textRenderer._text_right(
             invoice,
             d,

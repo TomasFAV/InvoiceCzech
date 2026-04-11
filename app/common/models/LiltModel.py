@@ -11,60 +11,50 @@ class LiltModel(TokenClassificationModel):
     def __init__(self, model_path="TomasFAV/LiLTInvoiceCzechV0123"):
         super().__init__(model_path)
 
-    def predict_labels(self, words:list[str], bboxes:list[tuple[int,int,int,int]])->list[TokenTag]:
-        """
-        Vrací pole dvojic id tagů, které je v pořadí slov, která byla zaslána k predikci
-        """
-        
+    def predict_labels(self, words: list[str], bboxes: list[tuple[int,int,int,int]]) -> list[TokenTag]:
         encoding = self._processor(
             words,
             boxes=bboxes,
             return_tensors="pt",
-            return_overflowing_tokens=True, return_offsets_mapping =True,
+            return_overflowing_tokens=True,
+            return_offsets_mapping=True,
             max_length=512,
             stride=128,
-            padding="max_length",  
-            truncation=True,        
+            padding="max_length",
+            truncation=True,
             is_split_into_words=True,
+        )
 
-        ).to(self._device)
+        offset_mapping = encoding.pop("offset_mapping")
+        encoding.pop("overflow_to_sample_mapping", None)
 
-        offset_mapping = encoding.pop('offset_mapping')
+        for k in encoding:
+            encoding[k] = encoding[k].to(self._device)
 
-        encoding.pop('overflow_to_sample_mapping')
+        with torch.no_grad():
+            outputs = self._model(**encoding)
 
-        for k,v in encoding.items():
-            encoding[k] = v.to(self._device)
+        logits = outputs.logits.argmax(-1).cpu()   # [batch, seq_len]
+        offset_mapping = offset_mapping.cpu()
 
-        outputs = self._model(**encoding)
+        labels: list[TokenTag | None] = [None] * len(words)
 
-        logits = outputs.logits
-        predictions = logits.view(1, -1, logits.size(2)).squeeze(0).argmax(-1) #reshape na jeden dlouhy list predikci v 1D
+        for batch_idx in range(logits.size(0)):
+            word_ids = encoding.word_ids(batch_index=batch_idx)
 
+            for token_idx, word_id in enumerate(word_ids):
+                if word_id is None:
+                    continue
 
-        word_ids = []
-        for batch_idx in range(len(encoding["input_ids"])):
-            for id, word_id in enumerate(encoding.word_ids(batch_index=batch_idx)):
-                word_ids.append(word_id) 
+                start_offset = offset_mapping[batch_idx, token_idx, 0].item()
+                if start_offset != 0:
+                    continue  # subword -> nechci
 
-        is_subword = np.array(offset_mapping.view(1, -1, offset_mapping.size(2)).squeeze(0).tolist())[:,0] != 0
+                if labels[word_id] is None:
+                    pred_id = logits[batch_idx, token_idx].item()
+                    labels[word_id] = TokenTag.from_id(pred_id)
 
-
-        true_words = [word_ids[idx] for idx, pred in enumerate(predictions) if not is_subword[idx]]
-        true_predictions = [pred for idx, pred in enumerate(predictions) if not is_subword[idx]]
-
-        labels = []
-        already_done_words = set()
-
-        for word, pred in zip(true_words, true_predictions):
-            if word is None or word in already_done_words:
-                continue
-
-            tag:TokenTag =  TokenTag.from_id(pred.item())
-            labels.append(tag)
-            already_done_words.add(word)
-        
-        return labels
+        return [label if label is not None else TokenTag.O for label in labels]
 
 
     def predict_json(self, words:list[str], bboxes:list[tuple[int,int,int,int]]) -> dict[str, str]:

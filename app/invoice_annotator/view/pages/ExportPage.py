@@ -7,7 +7,7 @@ from typing import Any
 from pathlib import Path
 from common.view.components.ExportInvoiceCanvas import ExportInvoiceCanvas
 from invoice_annotator.controller.ExportPageController import ExportPageController
-from common.view.components.InvoiceForm import Form, FormConfig
+from common.view.components.Form import Form, FormConfig
 from common.invoice.OperationResult import OperationResult
 from common.view.View import View
 

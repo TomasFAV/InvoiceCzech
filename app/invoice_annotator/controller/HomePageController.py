@@ -68,9 +68,9 @@ class HomePageController(Controller):
         #tags = list()
 
         for i, _ in enumerate(bbox):
-            tag:TokenTag =  TokenTag.from_id(tags[i]) if i < len(tags) else TokenTag.O
+            tag:TokenTag =  tags[i]
             color = DEFAULT_TOKEN_COLOR if tag == TokenTag.O else SET_TOKEN_COLOR 
-            self.append_token(GToken(None, text[i], bbox[i], TokenTag.from_id(tags[i]) if i < len(tags) else TokenTag.O, color))
+            self.append_token(GToken(None, text[i], bbox[i], tag, color))
 
         return True
 

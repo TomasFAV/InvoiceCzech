@@ -2,39 +2,39 @@ import random
 from typing import final
 from PIL import Image, ImageDraw
 
-from invoices_generator.core.InvoiceComponent import InvoiceComponent
+from common.data.InvoiceComponent import InvoiceComponent
 from common.invoice.models.Invoice import Invoice
 from common.invoice.models.InvoiceData import InvoiceData
-from common.invoice.Renderers.TextRenderer import TextRenderer
+from common.invoice.renderers.TextRenderer import TextRenderer
 from common.invoice.models.InvoiceTemplate import InvoiceTemplate
-from invoices_generator.templates.components.lorem.LoremF import LoremF
-from invoices_generator.templates.components.lorem.LoremE import LoremE
-from invoices_generator.templates.components.lorem.LoremD import LoremD
-from invoices_generator.templates.components.lorem.LoremC import LoremC
-from invoices_generator.templates.components.lorem.LoremB import LoremB
-from invoices_generator.templates.components.total.TotalB import TotalB
-from invoices_generator.templates.components.vats.VatC import VatC
-from invoices_generator.templates.components.vats.VatB import VatB
-from invoices_generator.templates.components.bank_details.BankDetailsC import BankDetailsC
-from invoices_generator.templates.components.bodies.TableB import TableB
-from invoices_generator.templates.components.bank_details.BankDetailsB import BankDetailsB
-from invoices_generator.templates.components.lorem.LoremA import LoremA
-from invoices_generator.templates.components.suppliers_customers.CompanyC import CompanyC
-from invoices_generator.templates.components.suppliers_customers.CompanyB import CompanyB
-from invoices_generator.templates.components.info.InfoC import InfoC
-from invoices_generator.templates.components.info.InfoB import info_b
-from invoices_generator.templates.components.headers.HeaderA import HeaderA
-from invoices_generator.templates.components.headers.HeaderB import HeaderB
-from invoices_generator.templates.components.headers.HeaderC import HeaderC
-from invoices_generator.templates.components.bank_details.BankDetailsA import BankDetailsA
-from invoices_generator.templates.components.bodies.TableA import TableA
-from invoices_generator.templates.components.info.InfoA import InfoA
-from invoices_generator.templates.components.suppliers_customers.CompanyA import CompanyA
-from invoices_generator.templates.components.total.TotalA import TotalA
-from invoices_generator.templates.components.vats.VatA import VatA
+from common.invoice.templates.lorem.LoremF import LoremF
+from common.invoice.templates.lorem.LoremE import LoremE
+from common.invoice.templates.lorem.LoremD import LoremD
+from common.invoice.templates.lorem.LoremC import LoremC
+from common.invoice.templates.lorem.LoremB import LoremB
+from common.invoice.templates.totals.TotalB import TotalB
+from common.invoice.templates.vats.VatC import VatC
+from common.invoice.templates.vats.VatB import VatB
+from common.invoice.templates.bank_details.BankDetailsC import BankDetailsC
+from common.invoice.templates.bodies.TableB import TableB
+from common.invoice.templates.bank_details.BankDetailsB import BankDetailsB
+from common.invoice.templates.lorem.LoremA import LoremA
+from common.invoice.templates.suppliers_customers.CompanyC import CompanyC
+from common.invoice.templates.suppliers_customers.CompanyB import CompanyB
+from common.invoice.templates.info.InfoC import InfoC
+from common.invoice.templates.info.InfoB import info_b
+from common.invoice.templates.headers.HeaderA import HeaderA
+from common.invoice.templates.headers.HeaderB import HeaderB
+from common.invoice.templates.headers.HeaderC import HeaderC
+from common.invoice.templates.bank_details.BankDetailsA import BankDetailsA
+from common.invoice.templates.bodies.TableA import TableA
+from common.invoice.templates.info.InfoA import InfoA
+from common.invoice.templates.suppliers_customers.CompanyA import CompanyA
+from common.invoice.templates.totals.TotalA import TotalA
+from common.invoice.templates.vats.VatA import VatA
 
-from invoices_generator.utility.invoice_consts import _A4_H_PX, _A4_W_PX, BG
-from invoices_generator.utility.utils import mm
+from common.utils.consts import _A4_H_PX, _A4_W_PX, BG
+from common.utils.utilities import mm
 
 
 headers:list[InvoiceComponent] = [HeaderA, HeaderB, HeaderC]

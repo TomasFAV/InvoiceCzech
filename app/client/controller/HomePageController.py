@@ -1,16 +1,16 @@
 import json
 import os
 from typing import Any
-from requests import Session
 from transformers import AutoTokenizer
+from common.Session import Session
 from common.models.ModelController import Model, ModelController
 from common.models.LiltModel import LiltModel
 from common.utils.GTesseract import GTesseract, TesseractConfig
 from common.enumerates.TokenTag import TokenTag
 from common.invoice.models.GToken import GToken
 from common.utils.consts import DEFAULT_TOKEN_COLOR, SET_TOKEN_COLOR
-from common.invoice.Processors.IEProcessors.DonutIEProcessor import DonutIEConfig
-from common.invoice.Processors.IEProcessors.LayoutLMV3IEProcessor import LayoutLMV3IEConfig
+from common.invoice.processors.IEProcessors.DonutIEProcessor import DonutIEConfig
+from common.invoice.processors.IEProcessors.LayoutLMV3IEProcessor import LayoutLMV3IEConfig
 from common.invoice.OperationResult import OperationResult
 from common.controller.Controller import Controller
 from PIL import Image

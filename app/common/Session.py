@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
+from pathlib import Path
 
-from anyio import Path
 from common.invoice.models.Invoice import Invoice
 from common.invoice.models.InvoiceData import InvoiceData
 from common.invoice.models.GSegment import GSegment

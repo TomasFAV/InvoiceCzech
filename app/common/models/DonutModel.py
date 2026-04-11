@@ -3,7 +3,7 @@ from PIL import Image
 
 from common.enumerates.SpanTag import SpanTag
 from common.models.EndToEndModel import EndToEndModel
-from invoices_generator.utility.invoice_consts import _A4_H_PX, _A4_W_PX
+from common.utils.consts import _A4_H_PX, _A4_W_PX
 from common.enumerates.TokenTag import TokenTag
 
 class DonutModel(EndToEndModel):

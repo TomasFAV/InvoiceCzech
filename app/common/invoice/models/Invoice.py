@@ -30,7 +30,7 @@ class Invoice(json_serializable):
     ####                    ####
     ############################  
 
-    tesseract:GTesseract = field(default_factory=GTesseract)
+    #tesseract:GTesseract = field(default_factory=GTesseract)
 
     ###############################################################
     #            Informace potřebné pro tvorbu datasetu           # 

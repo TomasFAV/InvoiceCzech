@@ -3,13 +3,13 @@ from PIL import Image, ImageDraw, ImageFont
 
 from common.invoice.models.Invoice import Invoice
 from common.invoice.models.InvoiceData import InvoiceData
-from common.invoice.Renderers.TextRenderer import TextRenderer
+from common.invoice.renderers.TextRenderer import TextRenderer
 from common.invoice.models.InvoiceTemplate import InvoiceTemplate
 from common.enumerates.SpanTag import SpanTag
 
-from invoices_generator.utility.invoice_consts import _A4_H_PX, _A4_W_PX, INK, MUTED, LINE, LINE_MID, LINE_STRONG, BG
-from invoices_generator.utility.utils import mm
-from invoices_generator.utility.utils import safe, fmt_money
+from common.utils.consts import _A4_H_PX, _A4_W_PX, INK, MUTED, LINE, LINE_MID, LINE_STRONG, BG
+from common.utils.utilities import mm
+from common.utils.utilities import safe, fmt_money
 
 
 
@@ -49,19 +49,19 @@ class RestaurantReceipt(InvoiceTemplate):
         supplier_name = safe(getattr(data.supplier, "name", ""))
         supplier_addr = safe(getattr(data.supplier, "address", ""))
 
-        textRenderer._text_center(invoice, d, (x0 + x1)//2, y, supplier_name or "—", textRenderer._f14b, INK)
+        textRenderer._text_center(invoice, (x0 + x1)//2, y, supplier_name or "—", textRenderer._f14b, INK)
         y += mm(6)
         # Druhý řádek (volitelný, např. „PIZZERIE…“ – použijeme supplier_name znovu, ať je to obecné)
-        textRenderer._text_center(invoice, d, (x0 + x1)//2, y, supplier_name, textRenderer._f10, MUTED)
+        textRenderer._text_center(invoice, (x0 + x1)//2, y, supplier_name, textRenderer._f10, MUTED)
         y += mm(5)
         if supplier_addr:
-            textRenderer._text_center(invoice, d, (x0 + x1)//2, y, supplier_addr, textRenderer._f10, MUTED)
+            textRenderer._text_center(invoice, (x0 + x1)//2, y, supplier_addr, textRenderer._f10, MUTED)
             y += mm(3)
         else:
             y += mm(3)
         #IČ, DIČ
-        x_now, _ = textRenderer._text(invoice, d, ((x0 + x1)//2 - mm(15), y), label="IČ: ", text=f"{data.supplier.register_id}", end=",", font=textRenderer._f10, fill=MUTED, span_tag=SpanTag.SUPPLIER_REGISTER_ID)
-        textRenderer._text(invoice, d, (x_now, y), label="DIČ: ", text=f"{data.supplier.tax_id}", font=textRenderer._f10, fill=MUTED, span_tag=SpanTag.SUPPLIER_TAX_ID)
+        x_now, _ = textRenderer._text(invoice, ((x0 + x1)//2 - mm(15), y), label="IČ: ", text=f"{data.supplier.register_id}", end=",", font=textRenderer._f10, fill=MUTED, span_tag=SpanTag.SUPPLIER_REGISTER_ID)
+        textRenderer._text(invoice, (x_now, y), label="DIČ: ", text=f"{data.supplier.tax_id}", font=textRenderer._f10, fill=MUTED, span_tag=SpanTag.SUPPLIER_TAX_ID)
         y += mm(5)
         hr(y, "thin")
         y += mm(3)
@@ -72,8 +72,8 @@ class RestaurantReceipt(InvoiceTemplate):
 
         def kv(label:str, value:str, bold:bool=False, tag:SpanTag = SpanTag.O, undersampling:bool = True) -> None:
             nonlocal y
-            textRenderer._text(invoice, d,(kv_label_x, y), label, font=textRenderer._f11, fill=INK)
-            textRenderer._text_right(invoice, d, kv_val_x, y, safe(value), textRenderer._f11b if bold else textRenderer._f11, INK, span_tag=tag)
+            textRenderer._text(invoice,(kv_label_x, y), label, font=textRenderer._f11, fill=INK)
+            textRenderer._text_right(invoice, kv_val_x, y, safe(value), textRenderer._f11b if bold else textRenderer._f11, INK, span_tag=tag)
             y += mm(5)
 
         # mapování na invoice
@@ -102,7 +102,7 @@ class RestaurantReceipt(InvoiceTemplate):
 
         def th(txt:str, col:int, font:ImageFont.FreeTypeFont) -> None:
             cx = (col_x[col] + col_x[col+1])//2
-            textRenderer._text_center(invoice, d, cx, y, txt, font, INK)
+            textRenderer._text_center(invoice, cx, y, txt, font, INK)
 
         th("Název", 0, textRenderer._f11b); th("Počet", 1, textRenderer._f11b); th("Cena", 2, textRenderer._f11b); th("Celkem", 3, textRenderer._f11b)
         y += mm(6)
@@ -111,10 +111,10 @@ class RestaurantReceipt(InvoiceTemplate):
         def row(name:str, qty:str, price:str, total:str) -> None:
             nonlocal y
             y += mm(2.5)
-            textRenderer._text(invoice, d,(col_x[0] + mm(2), y), safe(name), font=textRenderer._f10, fill=INK)
-            x_end, _ = textRenderer._text_center(invoice, d, (col_x[1] + col_x[2])//2, y, safe(qty), textRenderer._f10, INK)
-            textRenderer._text(invoice, d, (col_x[2], y), safe(price), textRenderer._f10, INK)
-            textRenderer._text_right(invoice, d, col_x[4] - mm(2), y, safe(total), textRenderer._f10, INK)
+            textRenderer._text(invoice,(col_x[0] + mm(2), y), safe(name), font=textRenderer._f10, fill=INK)
+            x_end, _ = textRenderer._text_center(invoice, (col_x[1] + col_x[2])//2, y, safe(qty), textRenderer._f10, INK)
+            textRenderer._text(invoice, (col_x[2], y), safe(price), textRenderer._f10, INK)
+            textRenderer._text_right(invoice, col_x[4] - mm(2), y, safe(total), textRenderer._f10, INK)
             y += mm(6)
             d.line([(x0, y), (x1, y)], fill=LINE, width=1)
 
@@ -138,23 +138,23 @@ class RestaurantReceipt(InvoiceTemplate):
 
         def total_line(label:str, value:str, end:str|None = None, big:bool=False, label_tag:SpanTag=SpanTag.O,tag:SpanTag = SpanTag.O) -> None:
             nonlocal y
-            textRenderer._text(invoice, d,(kv_label_x, y), label, font=textRenderer._f11b if big else textRenderer._f11, fill=INK, span_tag=label_tag)
-            x_n, _ = textRenderer._text_right(invoice, d, kv_val_x, y, value, textRenderer._f12b if big else textRenderer._f11, INK, span_tag=tag)
-            textRenderer._text(invoice, d, (x_n, y), end, textRenderer._f12b if big else textRenderer._f11, INK)
+            textRenderer._text(invoice,(kv_label_x, y), label, font=textRenderer._f11b if big else textRenderer._f11, fill=INK, span_tag=label_tag)
+            x_n, _ = textRenderer._text_right(invoice, kv_val_x, y, value, textRenderer._f12b if big else textRenderer._f11, INK, span_tag=tag)
+            textRenderer._text(invoice, (x_n, y), end, textRenderer._f12b if big else textRenderer._f11, INK)
             y += mm(6 if big else 5)
 
         def total_line_summary(label0:str,label1:str, value0:str, value1:str,end0:str|None = None, end1:str|None = None, big0:bool=False, big1:bool=False,
                                 label_tag0:SpanTag=SpanTag.O, label_tag1:SpanTag=SpanTag.O, tag0:SpanTag = SpanTag.O, tag1:SpanTag = SpanTag.O ) -> None:
             nonlocal y
-            textRenderer._text(invoice, d,(kv_label_x, y), label0, font=textRenderer._f11b if big0 else textRenderer._f11, fill=INK, span_tag=label_tag0)
-            x_n, base_id = textRenderer._text_right(invoice, d, kv_val_x, y, value0, textRenderer._f12b if big0 else textRenderer._f11, INK, span_tag=tag0)
-            textRenderer._text(invoice, d, (x_n, y), end0, textRenderer._f12b if big0 else textRenderer._f11, INK)
+            textRenderer._text(invoice,(kv_label_x, y), label0, font=textRenderer._f11b if big0 else textRenderer._f11, fill=INK, span_tag=label_tag0)
+            x_n, base_id = textRenderer._text_right(invoice, kv_val_x, y, value0, textRenderer._f12b if big0 else textRenderer._f11, INK, span_tag=tag0)
+            textRenderer._text(invoice, (x_n, y), end0, textRenderer._f12b if big0 else textRenderer._f11, INK)
             y += mm(6 if big0 else 5)
             y += mm(2)
 
-            _, percentage_id = textRenderer._text(invoice, d,(kv_label_x, y), label1, font=textRenderer._f11b if big1 else textRenderer._f11, fill=INK, span_tag=label_tag1)
-            x_n, vat_id = textRenderer._text_right(invoice, d, kv_val_x, y, value1, textRenderer._f12b if big1 else textRenderer._f11, INK, span_tag=tag1)
-            textRenderer._text(invoice, d, (x_n, y), end1, textRenderer._f12b if big1 else textRenderer._f11, INK)
+            _, percentage_id = textRenderer._text(invoice,(kv_label_x, y), label1, font=textRenderer._f11b if big1 else textRenderer._f11, fill=INK, span_tag=label_tag1)
+            x_n, vat_id = textRenderer._text_right(invoice, kv_val_x, y, value1, textRenderer._f12b if big1 else textRenderer._f11, INK, span_tag=tag1)
+            textRenderer._text(invoice, (x_n, y), end1, textRenderer._f12b if big1 else textRenderer._f11, INK)
             
             y += mm(6 if big0 else 5)
             y += mm(2)
@@ -185,8 +185,8 @@ class RestaurantReceipt(InvoiceTemplate):
         # --- ZÁKAZNÍK ---
         customer_name = safe(getattr(data.customer, "name", ""))
         if customer_name:
-            textRenderer._text(invoice, d,(kv_label_x, y), "Zákazník:", font=textRenderer._f11, fill=INK)
-            textRenderer._text_right(invoice, d, kv_val_x, y, customer_name, textRenderer._f11b, INK)
+            textRenderer._text(invoice,(kv_label_x, y), "Zákazník:", font=textRenderer._f11, fill=INK)
+            textRenderer._text_right(invoice, kv_val_x, y, customer_name, textRenderer._f11b, INK)
             y += mm(6)
 
         # --- PATIČKA / POZNÁMKY ---
@@ -197,7 +197,7 @@ class RestaurantReceipt(InvoiceTemplate):
         bx0 = max(x0 + mm(2), (x0 + x1 - w_badge)//2)
         by0 = y
         by1 = by0 + mm(7)
-        x_end, _ = textRenderer._text_center(invoice, d, (x0 + x1)//2, by0 + mm(1.5), label="Způsob úhrady:", text=f"{pay_str}", font=textRenderer._f10, fill=INK, span_tag=SpanTag.PAYMENT_TYPE)
+        x_end, _ = textRenderer._text_center(invoice, (x0 + x1)//2, by0 + mm(1.5), label="Způsob úhrady:", text=f"{pay_str}", font=textRenderer._f10, fill=INK, span_tag=SpanTag.PAYMENT_TYPE)
         d.rectangle((bx0, by0, x_end, by1), outline=LINE, width=2, fill=None)
         y = by1 + mm(4)
 

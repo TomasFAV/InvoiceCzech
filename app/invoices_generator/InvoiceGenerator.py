@@ -9,21 +9,23 @@ from tqdm.auto import tqdm
 from contextlib import ExitStack
 
 
-from invoices_generator.core.Bank import Bank
-from common.invoice.Processors.IEProcessors.DonutIEProcessor import DonutIEConfig
-from common.invoice.Processors.IEProcessors.LayoutLMV3IEProcessor import LayoutLMV3IEConfig
-from common.invoice.Processors.InvoiceExporter import InvoiceExporter
+from common.invoice.renderers.InvoicePostProcessor import InvoicePostProcessor
+from data_generator.DataGenerator import DataGenerator
+from common.data.Bank import Bank
+from common.invoice.processors.IEProcessors.DonutIEProcessor import DonutIEConfig
+from common.invoice.processors.IEProcessors.LayoutLMV3IEProcessor import LayoutLMV3IEConfig
+from common.invoice.processors.InvoiceExporter import InvoiceExporter
 from common.invoice.OperationResult import OperationResult
 from common.invoice.models.Invoice import Invoice
 from common.invoice.models.InvoiceData import InvoiceData
 from common.invoice.models.InvoiceTemplate import InvoiceTemplate
-from common.invoice.Renderers.InvoiceRenderer import InvoiceRenderer
+from common.invoice.renderers.InvoiceRenderer import InvoiceRenderer
 from invoices_generator.templates.AudiInvoice import AudiInvoice 
 from invoices_generator.templates.OreaHotelInvoice import OreaHotelInvoice
 from invoices_generator.templates.MartinusInvoice import MartinusInvoice
-from invoices_generator.core.Company import Company
+from common.data.Company import Company
 from common.enumerates.SpanTag import SPAN_TAGS_TO_IGNORE, SpanTag
-from invoices_generator.core.InvoiceItem import InvoiceItem
+from common.data.InvoiceItem import InvoiceItem
 from invoices_generator.templates.AlzaInvoice import AlzaInvoice
 from invoices_generator.templates.GeneralInvoice import GeneralInvoice
 from invoices_generator.templates.PhoneInvoice import PhoneInvoice
@@ -41,7 +43,7 @@ from invoices_generator.templates.RandomInvoice import RandomInvoice
 from invoices_generator.templates.KnihyDobrovskyInvoice import KnihyDobrovskyInvoice
 from invoices_generator.templates.FlexibeeInvoice import FlexibeeInvoice
 
-from invoices_generator.utility.invoice_consts import *
+from common.data.invoice_consts import *
 
 
 @dataclass
@@ -156,7 +158,7 @@ class InvoiceGenerator:
 
 
         for _ in range(quantity):
-            item = InvoiceGenerator.generate_item()
+            item = DataGenerator.generate_item()
             items.append(item)
 
             total_price += item.price_with_vat
@@ -251,10 +253,91 @@ class InvoiceGenerator:
 
         return (issue_date, taxable_supply_date, due_date)
 
-    def generate_folder(folder: str, count: int) -> None:
+    def generate_folder(folder: str, count: int, templates:list[type[InvoiceTemplate]]) -> None:
         renderer: InvoiceRenderer = InvoiceRenderer()
+        post_processor: InvoicePostProcessor = InvoicePostProcessor()
         exporter: InvoiceExporter = InvoiceExporter()
 
+        # Definice cest k souborům
+        paths = {
+            "donut": f"app/data/{folder}/metadata_donut.jsonl",
+            "layoutlm": f"app/data/{folder}/metadata_layoutlmv3.jsonl",
+            "coco": f"app/data/{folder}/metadata_coco.json",
+            "yolo": f"app/data/{folder}/labels/"
+        }
+
+        os.makedirs(paths["yolo"], exist_ok=True)
+
+        # Výpočet celkového počtu pro tqdm (počet iterací * počet tříd faktur)
+        total_steps = count * len(templates)
+
+        # Otevřeme všechny soubory a spustíme progress bar
+        with ExitStack() as stack:
+            f_donut = stack.enter_context(open(paths["donut"], "w", encoding="utf-8"))
+            f_layout = stack.enter_context(open(paths["layoutlm"], "w", encoding="utf-8"))
+
+            pbar = tqdm(total=total_steps, desc=f"Generování faktur ({folder})", unit="img")
+
+            for _ in range(count):
+                for template in templates:
+                    data:InvoiceData = DataGenerator.generate_invoice_data()
+
+                    file_name = f"{template.__name__}_{data.invoice_number.replace("/","")}.png"
+                    img_folder = f"app/data/{folder}/images/"
+                    img_path = os.path.join(img_folder, file_name) 
+
+                    os.makedirs(img_folder, exist_ok=True)
+
+                    render_result: OperationResult = renderer.render(data, template)
+                    post_process_result: OperationResult = post_processor.post_process(render_result.passed_value) #augmentuje fakturu(bboxy + obrázek)
+
+                    # --- 2. Generování obrázku ---
+                    if render_result.ok and post_process_result:
+                        
+                        invoice: Invoice = render_result.passed_value
+                        invoice.image.save(img_path)
+
+                        # --- 3. Zápis do DONUT (JSONL) ---
+                        donut_gt = {"gt_parse": exporter.export_donut(invoice, data, DonutIEConfig.FROM_INVOICE_DATA_WITH_CHECK)}
+                        donut_output = {
+                            "file_name": file_name,
+                            "ground_truth": donut_gt
+                        }
+                        f_donut.write(json.dumps(donut_output, ensure_ascii=False) + "\n")
+
+                        # --- 4. Zápis do LAYOUTLMv3 (JSONL) ---
+                        layout_data = exporter.export_layoutlmv3(invoice, LayoutLMV3IEConfig.WITH_TESSERACT)
+                        layout_output = {
+                            "file_name": file_name,
+                            "data": layout_data
+                        }
+                        f_layout.write(json.dumps(layout_output, ensure_ascii=False) + "\n")
+
+                        # --- 5. Sběr dat pro COCO ---
+                        coco_data = exporter.export_coco(invoice, paths["coco"], file_name)
+                        with open(paths["coco"], "w", encoding="utf-8") as f_coco:
+                            f_coco.write(json.dumps(coco_data, ensure_ascii=False, indent=4))
+                        
+                        # --- 6. YOLO formát ---
+                        yolo_data = exporter.export_yolo(invoice)
+                        with open(paths["yolo"]+f"{template.__name__}_{data.invoice_number.replace("/","")}.txt", "w", encoding="utf-8") as f_yolo:
+                            f_yolo.write(yolo_data)
+
+
+
+                    # Update progress baru po každé faktuře
+                    pbar.update(1)
+
+            pbar.close()
+
+
+        print(f"\nHotovo! Metadata uložena v {folder}:")
+        print(f" - Donut: {paths['donut']}")
+        print(f" - LayoutLMv3: {paths['layoutlm']}")
+        print(f" - COCO: {paths['coco']}")
+                
+    def generate(train_count:int, test_count:int, validation_count:int, random_template:bool = False)->bool:
+        
         invoice_classes: list[type[InvoiceTemplate]] = [
                 AInvoice,
                 AlzaInvoice,
@@ -271,11 +354,9 @@ class InvoiceGenerator:
                 OreaHotelInvoice,
                 PhoneInvoice,
                 PostInvoice,
-                RandomInvoice,
                 RestaurantReceipt,
                 SimpleInvoice,
                 StoreReceipt,
-                RandomInvoice
                 
                 #audi_invoice,
                 #orea_hotel_invoice,
@@ -330,122 +411,19 @@ class InvoiceGenerator:
 
                 #RandomInvoice,
                 #RandomInvoice,
-            ]
-        # Definice cest k souborům
-        paths = {
-            "donut": f"app/data/{folder}/metadata_donut.jsonl",
-            "layoutlm": f"app/data/{folder}/metadata_layoutlmv3.jsonl",
-            "coco": f"app/data/{folder}/metadata_coco.json",
-            "yolo": f"app/data/{folder}/labels/"
-        }
+        ]
 
-        os.makedirs(paths["yolo"], exist_ok=True)
+        if random_template:
+            invoice_classes: list[type[InvoiceTemplate]] = [RandomInvoice]
 
-        # Výpočet celkového počtu pro tqdm (počet iterací * počet tříd faktur)
-        total_steps = count * len(invoice_classes)
-
-        # Otevřeme všechny soubory a spustíme progress bar
-        with ExitStack() as stack:
-            f_donut = stack.enter_context(open(paths["donut"], "w", encoding="utf-8"))
-            f_layout = stack.enter_context(open(paths["layoutlm"], "w", encoding="utf-8"))
-
-            pbar = tqdm(total=total_steps, desc=f"Generování faktur ({folder})", unit="img")
-
-            for _ in range(count):
-                for template in invoice_classes:
-                    
-                    # --- 1. Příprava dat ---
-                    supp = InvoiceGenerator.generate_company()
-                    cust = InvoiceGenerator.generate_company()
-                    bank = banks_[random.randrange(0, len(banks_))]
-                    payment = payments[random.randrange(0, len(payments))]
-                    items, total_price, total_vat = InvoiceGenerator.generate_items()
-                    invoice_number = InvoiceGenerator.generate_invoice_number()
-                    variable_symbol = InvoiceGenerator.generate_variable_symbol(invoice_number)
-                    const_symbol = InvoiceGenerator.generate_const_symbol()
-                    bank_account_number, IBAN = InvoiceGenerator.generate_bank_account(bank)
-                    issue_date, taxable_supply_date, due_date = InvoiceGenerator.generate_invoice_dates()
-
-                    data = InvoiceData(
-                        invoice_number=invoice_number,
-                        variable_symbol=variable_symbol,
-                        bank_account_number=bank_account_number,
-                        IBAN=IBAN,
-                        issue_date=issue_date,
-                        taxable_supply_date=taxable_supply_date,
-                        due_date=due_date,
-                        const_symbol=const_symbol,
-                        supplier=supp,
-                        customer=cust,
-                        total_price=total_price,
-                        bank_account=bank,
-                        payment_type=payment,
-                        items=items,
-                    )
-
-                    file_name = f"{template.__name__}_{invoice_number.replace("/","")}.png"
-                    img_folder = f"app/data/{folder}/images/"
-                    img_path = os.path.join(img_folder, file_name) 
-
-                    os.makedirs(img_folder, exist_ok=True)
-
-                    result: OperationResult = renderer.render(data, template)
-
-                    # --- 2. Generování obrázku ---
-                    if result.ok:
-                        
-                        invoice: Invoice = result.passed_value
-                        invoice.image.save(img_path)
-
-                        # --- 3. Zápis do DONUT (JSONL) ---
-                        donut_gt = {"gt_parse": exporter.export_donut(invoice, data, DonutIEConfig.FROM_INVOICE_DATA_WITH_CHECK)}
-                        donut_output = {
-                            "file_name": file_name,
-                            "ground_truth": donut_gt
-                        }
-                        f_donut.write(json.dumps(donut_output, ensure_ascii=False) + "\n")
-
-                        # --- 4. Zápis do LAYOUTLMv3 (JSONL) ---
-                        layout_data = exporter.export_layoutlmv3(invoice, LayoutLMV3IEConfig.WITH_TESSERACT)
-                        layout_output = {
-                            "file_name": file_name,
-                            "data": layout_data
-                        }
-                        f_layout.write(json.dumps(layout_output, ensure_ascii=False) + "\n")
-
-                        # --- 5. Sběr dat pro COCO ---
-                        coco_data = exporter.export_coco(invoice, paths["coco"], file_name)
-                        with open(paths["coco"], "w", encoding="utf-8") as f_coco:
-                            f_coco.write(json.dumps(coco_data, ensure_ascii=False, indent=4))
-                        
-                        # --- 6. YOLO formát ---
-                        yolo_data = exporter.export_yolo(invoice)
-                        with open(paths["yolo"]+f"{template.__name__}_{invoice_number.replace("/","")}.txt", "w", encoding="utf-8") as f_yolo:
-                            f_yolo.write(yolo_data)
-
-
-
-                    # Update progress baru po každé faktuře
-                    pbar.update(1)
-
-            pbar.close()
-
-
-        print(f"\nHotovo! Metadata uložena v {folder}:")
-        print(f" - Donut: {paths['donut']}")
-        print(f" - LayoutLMv3: {paths['layoutlm']}")
-        print(f" - COCO: {paths['coco']}")
-                
-    def generate(train_count:int, test_count:int, validation_count:int)->bool:
-        
         if(train_count>0):
-            InvoiceGenerator.generate_folder("train", train_count)
+            InvoiceGenerator.generate_folder("train", train_count,invoice_classes)
 
         if(test_count>0):
-            InvoiceGenerator.generate_folder("test", test_count)
+            InvoiceGenerator.generate_folder("test", test_count, invoice_classes)
 
         if(validation_count>0):
-            InvoiceGenerator.generate_folder("validation", validation_count)
+            InvoiceGenerator.generate_folder("validation", validation_count, invoice_classes)
 
 
         class_names = "\n\t".join(f"{span_tag.code}: {span_tag.name}" for span_tag in SpanTag if span_tag not in SPAN_TAGS_TO_IGNORE)

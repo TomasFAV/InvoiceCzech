@@ -4,7 +4,7 @@ from typing import final
 from common.invoice.models.Invoice import Invoice
 from common.invoice.models.InvoiceData import InvoiceData
 from common.invoice.models.InvoiceTemplate import InvoiceTemplate
-from common.invoice.Renderers.TextRenderer import TextRenderer
+from common.invoice.renderers.TextRenderer import TextRenderer
 from common.enumerates.SpanTag import SpanTag
 from datetime import datetime, timedelta
 from typing import Optional, final
@@ -12,9 +12,9 @@ from typing import Optional, final
 from PIL import Image, ImageDraw
 
 
-from invoices_generator.utility.invoice_consts import _A4_H_PX, _A4_W_PX, INK, MUTED, LINE, LINE_MID, LINE_STRONG, BG, TMOBILE_PINK
-from invoices_generator.utility.utils import mm, text_width
-from invoices_generator.utility.utils import safe, fmt_money
+from common.utils.consts import _A4_H_PX, _A4_W_PX, INK, MUTED, LINE, LINE_MID, LINE_STRONG, BG, TMOBILE_PINK
+from common.utils.utilities import mm, text_width
+from common.utils.utilities import safe, fmt_money
 
 
 @final
@@ -75,13 +75,13 @@ class PhoneInvoice(InvoiceTemplate):
 
         # --- HLAVIČKA S T-MOBILE LOGEM ---
         # T-Mobile logo vlevo
-        textRenderer._text(invoice, d,(margin_l, y), "T", font=textRenderer._f48b, fill=TMOBILE_PINK)
+        textRenderer._text(invoice,(margin_l, y), "T", font=textRenderer._f48b, fill=TMOBILE_PINK)
         
         # Čárový kód vpravo
         barcode_text = "2 25912770 5 014"
         barcode_x = _A4_W_PX - margin_r - mm(40)
-        textRenderer._text(invoice, d,(barcode_x, y), barcode_text, font=textRenderer._f10, fill=INK)
-        textRenderer._text(invoice, d,(barcode_x, y + mm(4)), "|||||||||||||||||| 01", font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice,(barcode_x, y), barcode_text, font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice,(barcode_x, y + mm(4)), "|||||||||||||||||| 01", font=textRenderer._f10, fill=INK)
 
         y += mm(20)
 
@@ -97,32 +97,32 @@ class PhoneInvoice(InvoiceTemplate):
         right_x = margin_l + col_w + col_gap
 
         # LEVÝ SLOUPEC - Dodavatel
-        textRenderer._text(invoice, d,(left_x, y), "Dodavatel", font=textRenderer._f11b, fill=INK)
+        textRenderer._text(invoice,(left_x, y), "Dodavatel", font=textRenderer._f11b, fill=INK)
         y_left = y + mm(6)
 
-        textRenderer._text(invoice, d,(left_x, y_left), text=data.supplier.name, font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice,(left_x, y_left), text=data.supplier.name, font=textRenderer._f10, fill=INK)
         y_left += mm(4.5)
 
-        textRenderer._text(invoice, d,(left_x, y_left), text=data.supplier.address, font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice,(left_x, y_left), text=data.supplier.address, font=textRenderer._f10, fill=INK)
         y_left += mm(4.5)
 
-        textRenderer._text(invoice, d,(left_x, y_left), label="IČO: ", text=f"{data.supplier.register_id}", font=textRenderer._f10, fill=INK, span_tag=SpanTag.SUPPLIER_REGISTER_ID)
+        textRenderer._text(invoice,(left_x, y_left), label="IČO: ", text=f"{data.supplier.register_id}", font=textRenderer._f10, fill=INK, span_tag=SpanTag.SUPPLIER_REGISTER_ID)
         y_left += mm(4.5)
 
-        textRenderer._text(invoice, d,(left_x, y_left), text=f"Telefon: {data.supplier.phone}", font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice,(left_x, y_left), text=f"Telefon: {data.supplier.phone}", font=textRenderer._f10, fill=INK)
         y_left += mm(4.5)
 
-        textRenderer._text(invoice, d,(left_x, y_left), label="DIČ", text=f"{data.supplier.tax_id}", font=textRenderer._f10, fill=INK, span_tag=SpanTag.SUPPLIER_TAX_ID)
+        textRenderer._text(invoice,(left_x, y_left), label="DIČ", text=f"{data.supplier.tax_id}", font=textRenderer._f10, fill=INK, span_tag=SpanTag.SUPPLIER_TAX_ID)
         y_left += mm(4.5)
 
         # PRAVÝ SLOUPEC - Vyúčtování služeb
-        textRenderer._text(invoice, d,(right_x, y), "Vyúčtování služeb", font=textRenderer._f16b, fill=INK)
-        textRenderer._text(invoice, d,(right_x, y + mm(6)), random_period(), font=textRenderer._f11, fill=MUTED)
+        textRenderer._text(invoice,(right_x, y), "Vyúčtování služeb", font=textRenderer._f16b, fill=INK)
+        textRenderer._text(invoice,(right_x, y + mm(6)), random_period(), font=textRenderer._f11, fill=MUTED)
         
         y_right = y + mm(15)
         
         # Zákazník v rámečku
-        textRenderer._text(invoice, d,(right_x, y_right), "Zákazník", font=textRenderer._f11b, fill=INK)
+        textRenderer._text(invoice,(right_x, y_right), "Zákazník", font=textRenderer._f11b, fill=INK)
         y_right += mm(6)
         
         # Rámeček pro zákazníka
@@ -140,13 +140,13 @@ class PhoneInvoice(InvoiceTemplate):
         
         y_customer = y_right + padding
         for line in customer_lines:
-            textRenderer._text(invoice, d,(right_x + padding, y_customer), line, font=textRenderer._f10, fill=INK)
+            textRenderer._text(invoice,(right_x + padding, y_customer), line, font=textRenderer._f10, fill=INK)
             y_customer += mm(4.5)
 
-        textRenderer._text(invoice, d,(right_x + padding, y_customer), label="IČ: ", text=f"{data.customer.register_id}", font=textRenderer._f10, fill=INK, span_tag=SpanTag.CUSTOMER_REGISTER_ID)
+        textRenderer._text(invoice,(right_x + padding, y_customer), label="IČ: ", text=f"{data.customer.register_id}", font=textRenderer._f10, fill=INK, span_tag=SpanTag.CUSTOMER_REGISTER_ID)
         y_customer += mm(4.5)
 
-        textRenderer._text(invoice, d,(right_x + padding, y_customer), label="DIČ: ", text=f"{data.customer.tax_id}", font=textRenderer._f10, fill=INK, span_tag=SpanTag.CUSTOMER_TAX_ID)
+        textRenderer._text(invoice,(right_x + padding, y_customer), label="DIČ: ", text=f"{data.customer.tax_id}", font=textRenderer._f10, fill=INK, span_tag=SpanTag.CUSTOMER_TAX_ID)
         y_customer += mm(4.5)
 
         # Posun Y pro další sekce
@@ -157,7 +157,7 @@ class PhoneInvoice(InvoiceTemplate):
         
         draw_box(left_x-mm(5), y-mm(5), left_x + mm(75), mm(50), border_color=TMOBILE_PINK)
 
-        textRenderer._text(invoice, d,(left_x, y), "Údaje pro platbu", font=textRenderer._f11b, fill=INK)
+        textRenderer._text(invoice,(left_x, y), "Údaje pro platbu", font=textRenderer._f11b, fill=INK)
         y_payment = y + mm(6)
 
         payment_items = [
@@ -170,15 +170,15 @@ class PhoneInvoice(InvoiceTemplate):
         ]
 
         for label, value, tag in payment_items:
-            textRenderer._text(invoice, d,(left_x, y_payment), text=label, font=textRenderer._f10, fill=INK)
-            textRenderer._text(invoice, d,(left_x + mm(35), y_payment), text=value, font=textRenderer._f11, fill=INK, span_tag=tag)
+            textRenderer._text(invoice,(left_x, y_payment), text=label, font=textRenderer._f10, fill=INK)
+            textRenderer._text(invoice,(left_x + mm(35), y_payment), text=value, font=textRenderer._f11, fill=INK, span_tag=tag)
             y_payment += mm(5)
 
         # Celková částka
         y_payment += mm(3)
-        new_x = textRenderer._text(invoice, d,(left_x, y_payment), "Celkem k úhradě", font=textRenderer._f12b, fill=INK)[0]
+        new_x = textRenderer._text(invoice,(left_x, y_payment), "Celkem k úhradě", font=textRenderer._f12b, fill=INK)[0]
         total_text = f"{fmt_money(data.calculated_total_price)}"
-        textRenderer._text(invoice, d,(new_x + mm(5), y_payment), text=total_text, end=" Kč", font=textRenderer._f12b, fill=INK, span_tag=SpanTag.TOTAL)
+        textRenderer._text(invoice,(new_x + mm(5), y_payment), text=total_text, end=" Kč", font=textRenderer._f12b, fill=INK, span_tag=SpanTag.TOTAL)
 
         # Pravý sloupec - Další údaje
         y_right = y + mm(6)
@@ -191,15 +191,15 @@ class PhoneInvoice(InvoiceTemplate):
         ]
 
         for label, value, tag in payment_items:
-            textRenderer._text(invoice, d,(right_x, y_right), text=label, font=textRenderer._f10, fill=INK)
-            textRenderer._text(invoice, d,(right_x + mm(45), y_right), text=value, font=textRenderer._f11, fill=INK, span_tag=tag)
+            textRenderer._text(invoice,(right_x, y_right), text=label, font=textRenderer._f10, fill=INK)
+            textRenderer._text(invoice,(right_x + mm(45), y_right), text=value, font=textRenderer._f11, fill=INK, span_tag=tag)
             y_right += mm(5)
 
         y = max(y_payment + mm(8), y_right) + mm(5)
 
         # --- ČÍSLO SLUŽBY ---
         service_text = f"{data.customer.phone} / 7 GB Plus"
-        textRenderer._text_center(invoice, d, _A4_W_PX // 2, y, service_text, textRenderer._f14b, INK)
+        textRenderer._text_center(invoice, _A4_W_PX // 2, y, service_text, textRenderer._f14b, INK)
         y += mm(5)
 
         # --- TABULKA ÚČTOVANÝCH POLOŽEK ---
@@ -208,7 +208,7 @@ class PhoneInvoice(InvoiceTemplate):
         d.rectangle((margin_l, y, margin_l + table_w, y + mm(8)), 
                     outline=None, fill=BG)
         
-        textRenderer._text(invoice, d,(margin_l + mm(3), y + mm(2.5)), 
+        textRenderer._text(invoice,(margin_l + mm(3), y + mm(2.5)), 
                 "Účtované položky (detail za skupiny přehled služeb)", 
                 font=textRenderer._f10, fill=INK)
         y += mm(8)
@@ -220,21 +220,21 @@ class PhoneInvoice(InvoiceTemplate):
         
         for item_label, item_value in table_items:
             hr(y, "thin")
-            textRenderer._text(invoice, d,(margin_l + mm(3), y + mm(3)), item_label, font=textRenderer._f10, fill=INK)
-            textRenderer._text_right(invoice, d, margin_l + table_w - mm(3), y + mm(3), item_value, textRenderer._f10, INK)
+            textRenderer._text(invoice,(margin_l + mm(3), y + mm(3)), item_label, font=textRenderer._f10, fill=INK)
+            textRenderer._text_right(invoice, margin_l + table_w - mm(3), y + mm(3), item_value, textRenderer._f10, INK)
             y += mm(7)
 
         for v in data.vat:
             hr(y, "thin")
-            _, percentage_id = textRenderer._text(invoice, d,(margin_l + mm(3), y + mm(3)), label="DPH (", text=f"{safe(v.vat_percentage)}", end="%)", font=textRenderer._f10, fill=INK, span_tag=SpanTag.O)
-            _, vat_id = textRenderer._text_right(invoice, d, margin_l + table_w - mm(3), y + mm(3), text=f"{fmt_money(v.vat)}",end="Kč", font=textRenderer._f10, fill=INK, span_tag=SpanTag.O)
+            _, percentage_id = textRenderer._text(invoice,(margin_l + mm(3), y + mm(3)), label="DPH (", text=f"{safe(v.vat_percentage)}", end="%)", font=textRenderer._f10, fill=INK, span_tag=SpanTag.O)
+            _, vat_id = textRenderer._text_right(invoice, margin_l + table_w - mm(3), y + mm(3), text=f"{fmt_money(v.vat)}",end="Kč", font=textRenderer._f10, fill=INK, span_tag=SpanTag.O)
         
             
             y += mm(7)
 
         hr(y, "thin")
-        textRenderer._text(invoice, d,(margin_l + mm(3), y + mm(3)), text="Celková za služby včetně DPH", font=textRenderer._f10, fill=INK)
-        textRenderer._text_right(invoice, d, margin_l + table_w - mm(3), y + mm(3), text=f"{fmt_money(data.calculated_total_price)}", end="Kč", font=textRenderer._f10, fill=INK, span_tag=SpanTag.TOTAL)
+        textRenderer._text(invoice,(margin_l + mm(3), y + mm(3)), text="Celková za služby včetně DPH", font=textRenderer._f10, fill=INK)
+        textRenderer._text_right(invoice, margin_l + table_w - mm(3), y + mm(3), text=f"{fmt_money(data.calculated_total_price)}", end="Kč", font=textRenderer._f10, fill=INK, span_tag=SpanTag.TOTAL)
         y += mm(7)
 
         hr(y, "thin")
@@ -244,7 +244,7 @@ class PhoneInvoice(InvoiceTemplate):
         d.rectangle((margin_l, y, margin_l + table_w, y + mm(12)), 
                     outline=None, fill=BG)
         total_final = f"Celkem k úhradě   {fmt_money(data.calculated_total_price)} Kč"
-        textRenderer._text_center(invoice, d, _A4_W_PX // 2, y + mm(4), label="Celkem k úhradě ",text=f"{fmt_money(data.calculated_total_price)}",end=" Kč", font=textRenderer._f16b, fill=INK, span_tag=SpanTag.TOTAL)
+        textRenderer._text_center(invoice, _A4_W_PX // 2, y + mm(4), label="Celkem k úhradě ",text=f"{fmt_money(data.calculated_total_price)}",end=" Kč", font=textRenderer._f16b, fill=INK, span_tag=SpanTag.TOTAL)
         y += mm(20)
 
         # --- UPOZORNĚNÍ ---
@@ -267,7 +267,7 @@ class PhoneInvoice(InvoiceTemplate):
         d.ellipse((margin_l + mm(3), y + mm(2), 
                     margin_l + mm(8), y + mm(7)), 
                     fill=TMOBILE_PINK)
-        textRenderer._text(invoice, d,(margin_l + mm(4.5), y + mm(2.5)), "i", font=textRenderer._f11b, fill=BG)
+        textRenderer._text(invoice,(margin_l + mm(4.5), y + mm(2.5)), "i", font=textRenderer._f11b, fill=BG)
 
         # Text upozornění (zalamování)
         words = notice_text.split()
@@ -289,7 +289,7 @@ class PhoneInvoice(InvoiceTemplate):
 
         y_notice = y + mm(2)
         for line in lines:
-            textRenderer._text(invoice, d,(margin_l + mm(10), y_notice), line, font=textRenderer._f10, fill=INK)
+            textRenderer._text(invoice,(margin_l + mm(10), y_notice), line, font=textRenderer._f10, fill=INK)
             y_notice += mm(3.5)
 
         y += notice_h + mm(5)
@@ -299,12 +299,12 @@ class PhoneInvoice(InvoiceTemplate):
         y += mm(3)
 
         # Stránka
-        textRenderer._text_right(invoice, d, _A4_W_PX - margin_r, y, "Stránka 1/1", textRenderer._f10, INK)
+        textRenderer._text_right(invoice, _A4_W_PX - margin_r, y, "Stránka 1/1", textRenderer._f10, INK)
         
         # Malý text
         footer_text = ("Registrace k dani z přidané hodnoty dle zákona ČPNI, I.10 279 665 a tel s DPTI "
                     "a stal společností představitaující u Finančního úřadu zastupovaného")
-        textRenderer._text(invoice, d,(margin_l, y + mm(4)), footer_text, font=textRenderer._f10, fill=MUTED)
+        textRenderer._text(invoice,(margin_l, y + mm(4)), footer_text, font=textRenderer._f10, fill=MUTED)
 
         
         invoice.image = img

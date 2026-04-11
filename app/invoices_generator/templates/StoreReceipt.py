@@ -4,12 +4,12 @@ from PIL import Image, ImageDraw
 from common.invoice.models.Invoice import Invoice
 from common.invoice.models.InvoiceData import InvoiceData
 from common.invoice.models.InvoiceTemplate import InvoiceTemplate
-from common.invoice.Renderers.TextRenderer import TextRenderer
+from common.invoice.renderers.TextRenderer import TextRenderer
 from common.enumerates.SpanTag import SpanTag
 
-from invoices_generator.utility.invoice_consts import _A4_H_PX, _A4_W_PX, INK, LINE, LINE_MID, LINE_STRONG, BG, SUBTLE_BG, BOX_BG
-from invoices_generator.utility.utils import mm
-from invoices_generator.utility.utils import safe, fmt_money
+from common.utils.consts import _A4_H_PX, _A4_W_PX, INK, LINE, LINE_MID, LINE_STRONG, BG, SUBTLE_BG, BOX_BG
+from common.utils.utilities import mm
+from common.utils.utilities import safe, fmt_money
 
 
 @final
@@ -37,14 +37,14 @@ class StoreReceipt(InvoiceTemplate):
 
         def kv_row(lbl:str, val:str, tag:SpanTag = SpanTag.O, undersampling:bool = True)->None:
             nonlocal y
-            textRenderer._text(invoice, d,(x0+mm(3), y), lbl, font=textRenderer._f11, fill=INK)
-            textRenderer._text_right(invoice, d, x1-mm(3), y, safe(val), textRenderer._f11b, INK, span_tag=tag)
+            textRenderer._text(invoice,(x0+mm(3), y), lbl, font=textRenderer._f11, fill=INK)
+            textRenderer._text_right(invoice, x1-mm(3), y, safe(val), textRenderer._f11b, INK, span_tag=tag)
             y += mm(5)
 
         # ---------------- HLAVIČKA ----------------
         box_top = y
         d.rectangle((x0, y, x1, y+mm(10)), outline=LINE_STRONG, width=2, fill=SUBTLE_BG)
-        textRenderer._text_center(invoice, d,(x0+x1)//2,y+mm(2), "DAŇOVÝ  DOKLAD", textRenderer._f12b)
+        textRenderer._text_center(invoice,(x0+x1)//2,y+mm(2), "DAŇOVÝ  DOKLAD", textRenderer._f12b)
         y += mm(14)
 
         supplier_name = safe(getattr(data.supplier, "name", ""))
@@ -53,14 +53,14 @@ class StoreReceipt(InvoiceTemplate):
         supplier_ico  = safe(getattr(data.supplier, "register_id", ""))
 
         if supplier_name:
-            textRenderer._text_center(invoice, d,(x0+x1)//2,y, supplier_name, textRenderer._f11b); y += mm(5)
+            textRenderer._text_center(invoice,(x0+x1)//2,y, supplier_name, textRenderer._f11b); y += mm(5)
         if supplier_addr:
-            textRenderer._text_center(invoice, d,(x0+x1)//2,y, supplier_addr, textRenderer._f11); y += mm(5)
+            textRenderer._text_center(invoice,(x0+x1)//2,y, supplier_addr, textRenderer._f11); y += mm(5)
         if supplier_dic or supplier_ico:
             if supplier_dic:
-                textRenderer._text_center(invoice, d,(x0+x1)//2,y, label="DIČ: ", text=f"{supplier_dic}", font=textRenderer._f11, span_tag=SpanTag.SUPPLIER_TAX_ID); y += mm(4.2)
+                textRenderer._text_center(invoice,(x0+x1)//2,y, label="DIČ: ", text=f"{supplier_dic}", font=textRenderer._f11, span_tag=SpanTag.SUPPLIER_TAX_ID); y += mm(4.2)
             if supplier_ico:
-                textRenderer._text_center(invoice, d,(x0+x1)//2,y, label="IČO: ", text=f"{supplier_ico}", font=textRenderer._f11, span_tag=SpanTag.SUPPLIER_REGISTER_ID); y += mm(5)
+                textRenderer._text_center(invoice,(x0+x1)//2,y, label="IČO: ", text=f"{supplier_ico}", font=textRenderer._f11, span_tag=SpanTag.SUPPLIER_REGISTER_ID); y += mm(5)
 
         hr(y, "thin"); y += mm(2)
 
@@ -77,7 +77,7 @@ class StoreReceipt(InvoiceTemplate):
 
         def th(i:int, txt:str)->None:
             cx = (col_x[i] + col_x[i+1])//2
-            textRenderer._text_center(invoice, d, cx, y, txt, textRenderer._f11b, INK)
+            textRenderer._text_center(invoice, cx, y, txt, textRenderer._f11b, INK)
 
         th(0, "počet")
         th(1, "jedn.cena")
@@ -92,10 +92,10 @@ class StoreReceipt(InvoiceTemplate):
         def item_row(qty_txt:str, ppu_txt:str, vat_txt:str, price_txt:str)->None:
             nonlocal y
             # počet (vlevo), jednotková, sazba (střed), cena (vpravo)
-            textRenderer._text_right(invoice, d, col_x[1]-mm(1), y, qty_txt, textRenderer._f11, INK)
-            textRenderer._text_right(invoice, d, col_x[2]-mm(1), y, ppu_txt, textRenderer._f11, INK)
-            textRenderer._text_center(invoice, d, (col_x[2]+col_x[3])//2, y, vat_txt, textRenderer._f11, INK)
-            textRenderer._text_right(invoice, d, col_x[4], y, price_txt, textRenderer._f11, INK)
+            textRenderer._text_right(invoice, col_x[1]-mm(1), y, qty_txt, textRenderer._f11, INK)
+            textRenderer._text_right(invoice, col_x[2]-mm(1), y, ppu_txt, textRenderer._f11, INK)
+            textRenderer._text_center(invoice, (col_x[2]+col_x[3])//2, y, vat_txt, textRenderer._f11, INK)
+            textRenderer._text_right(invoice, col_x[4], y, price_txt, textRenderer._f11, INK)
             y += mm(5.3)
 
         currency = data.currency.value if hasattr(data.currency, "value") else str(data.currency)
@@ -112,7 +112,7 @@ class StoreReceipt(InvoiceTemplate):
                     ppu = getattr(it, "price_with_vat", 0)
 
             # název (samostatný řádek)
-            textRenderer._text(invoice, d,(x0+pad, y), safe(getattr(it, "description", "")), font=textRenderer._f11, fill=INK)
+            textRenderer._text(invoice,(x0+pad, y), safe(getattr(it, "description", "")), font=textRenderer._f11, fill=INK)
             y += mm(5)
 
             qty_txt = f"{safe(qty)} {unit}".strip()
@@ -127,26 +127,26 @@ class StoreReceipt(InvoiceTemplate):
         # sazba   bez DPH   DPH   s DPH
         def sum_header()->None:
             nonlocal y
-            textRenderer._text_center(invoice, d, x0+pad + col_w[0]*0.35, y, "sazba", textRenderer._f11b, INK, must_have_same_width=True)
-            textRenderer._text_center(invoice, d, x0+pad + col_w[0] + col_w[1]*0.55, y, "bez DPH", textRenderer._f11b, INK, must_have_same_width=True)
-            textRenderer._text_center(invoice, d, x0+pad + col_w[0] + col_w[1] + col_w[2]*0.55, y, "DPH", textRenderer._f11b, INK, must_have_same_width=True)
-            textRenderer._text_center(invoice, d, x1-pad - col_w[3]*0.35, y, "s DPH", textRenderer._f11b, INK, must_have_same_width=True)
+            textRenderer._text_center(invoice, x0+pad + col_w[0]*0.35, y, "sazba", textRenderer._f11b, INK, must_have_same_width=True)
+            textRenderer._text_center(invoice, x0+pad + col_w[0] + col_w[1]*0.55, y, "bez DPH", textRenderer._f11b, INK, must_have_same_width=True)
+            textRenderer._text_center(invoice, x0+pad + col_w[0] + col_w[1] + col_w[2]*0.55, y, "DPH", textRenderer._f11b, INK, must_have_same_width=True)
+            textRenderer._text_center(invoice, x1-pad - col_w[3]*0.35, y, "s DPH", textRenderer._f11b, INK, must_have_same_width=True)
             y += mm(5)
 
         sum_header()
         for v in data.vat:
             # řádky souhrnu
-            _, percentage_id = textRenderer._text_center(invoice, d, x0+pad + col_w[0]*0.35, y, text=f"{safe(v.vat_percentage)}", end="%", font= textRenderer._f11,fill=INK, span_tag=SpanTag.O)
-            _, base_id = textRenderer._text_right(invoice, d, x0+pad + col_w[0] + col_w[1] - mm(2), y, text=f"{fmt_money(v.vat_base)}", end=f"{currency}", font= textRenderer._f11, fill=INK, span_tag=SpanTag.O)
-            _, vat_id = textRenderer._text_right(invoice, d, x0+pad + col_w[0] + col_w[1] + col_w[2] - mm(2), y, f"{fmt_money(v.vat)}", end=f"{currency}", font=textRenderer._f11, fill=INK, span_tag=SpanTag.O)
-            textRenderer._text_right(invoice, d, x1-pad, y, f"{fmt_money(float(v.vat_base) + float(v.vat))} {currency}", textRenderer._f11, INK)
+            _, percentage_id = textRenderer._text_center(invoice, x0+pad + col_w[0]*0.35, y, text=f"{safe(v.vat_percentage)}", end="%", font= textRenderer._f11,fill=INK, span_tag=SpanTag.O)
+            _, base_id = textRenderer._text_right(invoice, x0+pad + col_w[0] + col_w[1] - mm(2), y, text=f"{fmt_money(v.vat_base)}", end=f"{currency}", font= textRenderer._f11, fill=INK, span_tag=SpanTag.O)
+            _, vat_id = textRenderer._text_right(invoice, x0+pad + col_w[0] + col_w[1] + col_w[2] - mm(2), y, f"{fmt_money(v.vat)}", end=f"{currency}", font=textRenderer._f11, fill=INK, span_tag=SpanTag.O)
+            textRenderer._text_right(invoice, x1-pad, y, f"{fmt_money(float(v.vat_base) + float(v.vat))} {currency}", textRenderer._f11, INK)
             y += mm(5)
 
         # CELKEM
         y += mm(1)
         d.rectangle((x0, y, x1, y+mm(9)), outline=LINE_STRONG, width=2, fill=BOX_BG)
-        textRenderer._text_center(invoice, d, (x0+x1)//2, y+mm(2), "CELKEM", textRenderer._f11b, INK)
-        textRenderer._text_right(invoice, d, x1-mm(4), y+mm(2), text=f"{fmt_money(data.calculated_total_price)}", end=f"{currency}", font=textRenderer._f11b, fill=INK, span_tag=SpanTag.TOTAL)
+        textRenderer._text_center(invoice, (x0+x1)//2, y+mm(2), "CELKEM", textRenderer._f11b, INK)
+        textRenderer._text_right(invoice, x1-mm(4), y+mm(2), text=f"{fmt_money(data.calculated_total_price)}", end=f"{currency}", font=textRenderer._f11b, fill=INK, span_tag=SpanTag.TOTAL)
         y += mm(12)
 
         # ---------------- PATIČKA / META ----------------
@@ -163,7 +163,7 @@ class StoreReceipt(InvoiceTemplate):
 
 
         y += mm(2)
-        textRenderer._text_center(invoice, d,(x0+x1)//2,y, "----  DĚKUJEME  ----", textRenderer._f11b)
+        textRenderer._text_center(invoice,(x0+x1)//2,y, "----  DĚKUJEME  ----", textRenderer._f11b)
         y += mm(6)
 
 

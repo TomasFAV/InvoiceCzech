@@ -14,7 +14,6 @@ class Model(Enum):
     LiLT = "LiLT"
     LayoutLMV3 = "LayoutLMV3"
     Donut = "Donut"
-    Pix2Struct = "Pix2Struct"
 
 
 class ModelController:

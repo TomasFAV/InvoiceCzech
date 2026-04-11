@@ -5,10 +5,10 @@ from PIL import Image, ImageDraw
 
 from common.invoice.models.Invoice import Invoice
 from common.invoice.models.InvoiceData import InvoiceData
-from common.invoice.Renderers.TextRenderer import TextRenderer
+from common.invoice.renderers.TextRenderer import TextRenderer
 from common.invoice.models.InvoiceTemplate import InvoiceTemplate
-from invoices_generator.utility.invoice_consts import _A4_H_PX, _A4_W_PX, INK, MUTED, LINE, LINE_MID, LINE_STRONG, BG
-from invoices_generator.utility.utils import mm, safe, fmt_money
+from common.utils.consts import _A4_H_PX, _A4_W_PX, INK, MUTED, LINE, LINE_MID, LINE_STRONG, BG
+from common.utils.utilities import mm, safe, fmt_money
 from common.enumerates.SpanTag import SpanTag
 
 
@@ -64,13 +64,13 @@ class KnihyDobrovskyInvoice(InvoiceTemplate):
         logo_h = mm(16)
         d.rectangle((x0, top_y0, x_mid, top_y0 + logo_h), outline=LINE_STRONG, width=2)
 
-        textRenderer._text(invoice,d, (x0 + mm(10), top_y0 + mm(4)), "KNIHY DOBROVSKÝ", font=textRenderer._f13b, fill=INK)
-        textRenderer._text(invoice,d, (x0 + mm(10), top_y0 + mm(10.2)), "Váš knihkupec s tradicí", font=textRenderer._f9, fill=MUTED)
-        textRenderer._text_right(invoice,d, x_mid - mm(10), top_y0 + mm(10.2), "Zal. 1990", textRenderer._f9, MUTED)
+        textRenderer._text(invoice, (x0 + mm(10), top_y0 + mm(4)), "KNIHY DOBROVSKÝ", font=textRenderer._f13b, fill=INK)
+        textRenderer._text(invoice, (x0 + mm(10), top_y0 + mm(10.2)), "Váš knihkupec s tradicí", font=textRenderer._f9, fill=MUTED)
+        textRenderer._text_right(invoice, x_mid - mm(10), top_y0 + mm(10.2), "Zal. 1990", textRenderer._f9, MUTED)
 
         # Prodávající + identifikace
         yl = top_y0 + logo_h + mm(6)
-        textRenderer._text(invoice,d, (x0 + mm(10), yl), "prodávající:", font=textRenderer._f10b, fill=INK)
+        textRenderer._text(invoice, (x0 + mm(10), yl), "prodávající:", font=textRenderer._f10b, fill=INK)
         yl += mm(6)
 
         seller_name = getattr(data, "seller_name", data.supplier.name)
@@ -78,9 +78,9 @@ class KnihyDobrovskyInvoice(InvoiceTemplate):
         seller_reg = getattr(data, "seller_register_id", data.supplier.register_id)
         seller_tax = getattr(data, "seller_tax_id", data.supplier.tax_id)
 
-        textRenderer._text(invoice,d, (x0 + mm(10), yl), safe(seller_name), font=textRenderer._f11b, fill=INK)
+        textRenderer._text(invoice, (x0 + mm(10), yl), safe(seller_name), font=textRenderer._f11b, fill=INK)
         yl += mm(5.2)
-        textRenderer._text(invoice,d, (x0 + mm(10), yl), safe(seller_addr), font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (x0 + mm(10), yl), safe(seller_addr), font=textRenderer._f10, fill=INK)
         yl += mm(5.2)
 
         textRenderer._text(invoice,
@@ -99,26 +99,26 @@ class KnihyDobrovskyInvoice(InvoiceTemplate):
             span_tag=SpanTag.SUPPLIER_TAX_ID)
         yl += mm(6)
 
-        textRenderer._text(invoice,d, (x0 + mm(10), yl), "zhotovitel je registrován v obchodním rejstříku.", font=textRenderer._f9, fill=MUTED)
+        textRenderer._text(invoice, (x0 + mm(10), yl), "zhotovitel je registrován v obchodním rejstříku.", font=textRenderer._f9, fill=MUTED)
         yl += mm(10)
 
         # Reklamace
-        textRenderer._text(invoice,d, (x0 + mm(10), yl), "Kam zaslat reklamaci:", font=textRenderer._f10b, fill=INK)
+        textRenderer._text(invoice, (x0 + mm(10), yl), "Kam zaslat reklamaci:", font=textRenderer._f10b, fill=INK)
         yl += mm(6)
 
         complaints_name = getattr(data, "complaints_name", seller_name)
         complaints_addr = getattr(data, "complaints_address", seller_addr)
         complaints_email = getattr(data, "complaints_email", "reklamace@knihydobrovsky.cz")
 
-        textRenderer._text(invoice,d, (x0 + mm(10), yl), safe(complaints_name), font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (x0 + mm(10), yl), safe(complaints_name), font=textRenderer._f10, fill=INK)
         yl += mm(5.2)
-        textRenderer._text(invoice,d, (x0 + mm(10), yl), safe(complaints_addr), font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (x0 + mm(10), yl), safe(complaints_addr), font=textRenderer._f10, fill=INK)
         yl += mm(5.2)
-        textRenderer._text(invoice,d, (x0 + mm(10), yl), safe(complaints_email), font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (x0 + mm(10), yl), safe(complaints_email), font=textRenderer._f10, fill=INK)
         yl += mm(6)
 
         shipping = getattr(data, "shipping_method", "Zásilkovna")
-        textRenderer._text(invoice,d, (x0 + mm(10), yl), f"Doprava: {safe(shipping)}", font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (x0 + mm(10), yl), f"Doprava: {safe(shipping)}", font=textRenderer._f10, fill=INK)
 
         # ---------------------------------------------------------------------
         # PRAVÝ HORNÍ BLOK (VS + doklad + odběratel + doručovací + řádky s daty)
@@ -128,15 +128,15 @@ class KnihyDobrovskyInvoice(InvoiceTemplate):
         head_h = mm(20)
         d.rectangle((x_mid, yrt0, x1, yrt0 + head_h), outline=LINE_STRONG, width=2)
 
-        textRenderer._text(invoice,d, (x_mid + mm(10), yrt0 + mm(5)),
+        textRenderer._text(invoice, (x_mid + mm(10), yrt0 + mm(5)),
                    "var. symbol (uvádějte při platbě):", font=textRenderer._f10b, fill=INK)
-        textRenderer._text_right(invoice,d, x1 - mm(10), yrt0 + mm(5),
+        textRenderer._text_right(invoice, x1 - mm(10), yrt0 + mm(5),
                          safe(data.variable_symbol), textRenderer._f11b, INK, span_tag=SpanTag.VARIABLE_SYMBOL)
 
         doc_label = getattr(data, "document_title", "účetní doklad č.:")
-        textRenderer._text(invoice,d, (x_mid + mm(10), yrt0 + mm(12.5)),
+        textRenderer._text(invoice, (x_mid + mm(10), yrt0 + mm(12.5)),
                    safe(doc_label), font=textRenderer._f10b, fill=INK)
-        textRenderer._text_right(invoice,d, x1 - mm(10), yrt0 + mm(12.5),
+        textRenderer._text_right(invoice, x1 - mm(10), yrt0 + mm(12.5),
                          safe(data.invoice_number), textRenderer._f11b, INK, span_tag=SpanTag.INVOICE_NUMBER)
 
         # 2) Odběratel
@@ -144,23 +144,23 @@ class KnihyDobrovskyInvoice(InvoiceTemplate):
         ob_h = mm(30)
         d.rectangle((x_mid, y_ob0, x1, y_ob0 + ob_h), outline=LINE_STRONG, width=2)
 
-        textRenderer._text(invoice,d, (x_mid + mm(10), y_ob0 + mm(5)), "odběratel:", font=textRenderer._f10b, fill=INK)
+        textRenderer._text(invoice, (x_mid + mm(10), y_ob0 + mm(5)), "odběratel:", font=textRenderer._f10b, fill=INK)
 
         cust_name = safe(data.customer.name)
         cust_addr = safe(data.customer.address)
         cust_reg = safe(getattr(data.customer, "register_id", ""))
         cust_tax = safe(getattr(data.customer, "tax_id", ""))
 
-        textRenderer._text(invoice,d, (x_mid + mm(52), y_ob0 + mm(5)), cust_name, font=textRenderer._f10, fill=INK)
-        textRenderer._text(invoice,d, (x_mid + mm(52), y_ob0 + mm(12)), cust_addr, font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (x_mid + mm(52), y_ob0 + mm(5)), cust_name, font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (x_mid + mm(52), y_ob0 + mm(12)), cust_addr, font=textRenderer._f10, fill=INK)
 
-        textRenderer._text(invoice,d, (x_mid + mm(10), y_ob0 + mm(22)), "identifikační číslo:", font=textRenderer._f10b, fill=INK)
+        textRenderer._text(invoice, (x_mid + mm(10), y_ob0 + mm(22)), "identifikační číslo:", font=textRenderer._f10b, fill=INK)
         last_x = textRenderer._text(invoice,
             d, (x_mid + mm(42), y_ob0 + mm(22)),
             cust_reg, font=textRenderer._f10, fill=INK,
             span_tag=SpanTag.CUSTOMER_REGISTER_ID
         )[0]
-        last_x = textRenderer._text(invoice,d, (last_x + mm(5), y_ob0 + mm(22)), "dič plátce:", font=textRenderer._f10b, fill=INK)[0]
+        last_x = textRenderer._text(invoice, (last_x + mm(5), y_ob0 + mm(22)), "dič plátce:", font=textRenderer._f10b, fill=INK)[0]
         textRenderer._text(invoice,
             d, (last_x + mm(3), y_ob0 + mm(22)),
             cust_tax, font=textRenderer._f10, fill=INK,
@@ -172,13 +172,13 @@ class KnihyDobrovskyInvoice(InvoiceTemplate):
         del_h = mm(22)
         d.rectangle((x_mid, y_del0, x1, y_del0 + del_h), outline=LINE_STRONG, width=2)
 
-        textRenderer._text(invoice,d, (x_mid + mm(10), y_del0 + mm(5)), "Doručovací  adresa:", font=textRenderer._f10b, fill=INK)
+        textRenderer._text(invoice, (x_mid + mm(10), y_del0 + mm(5)), "Doručovací  adresa:", font=textRenderer._f10b, fill=INK)
 
         delivery_name = safe(getattr(data, "delivery_name", "Z-BOX"))
         delivery_addr = safe(getattr(data, "delivery_address", cust_addr))
 
-        textRenderer._text(invoice,d, (x_mid + mm(52), y_del0 + mm(5)), delivery_name, font=textRenderer._f10b, fill=INK)
-        textRenderer._text(invoice,d, (x_mid + mm(52), y_del0 + mm(12)), delivery_addr, font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (x_mid + mm(52), y_del0 + mm(5)), delivery_name, font=textRenderer._f10b, fill=INK)
+        textRenderer._text(invoice, (x_mid + mm(52), y_del0 + mm(12)), delivery_addr, font=textRenderer._f10, fill=INK)
 
         # 4) řádky s daty/úhradou/bankou
         y_dat0 = y_del0 + del_h
@@ -189,8 +189,8 @@ class KnihyDobrovskyInvoice(InvoiceTemplate):
 
         def row(label: str, value: str, tag: SpanTag = SpanTag.O, undersampling: bool = True) -> None:
             nonlocal yy
-            textRenderer._text(invoice,d, (x_mid + mm(10), yy), label, font=textRenderer._f9, fill=INK)
-            textRenderer._text(invoice,d, (x_mid + mm(72), yy), safe(value), font=textRenderer._f9, fill=INK,
+            textRenderer._text(invoice, (x_mid + mm(10), yy), label, font=textRenderer._f9, fill=INK)
+            textRenderer._text(invoice, (x_mid + mm(72), yy), safe(value), font=textRenderer._f9, fill=INK,
                        span_tag=tag)
             yy += step
 
@@ -234,9 +234,9 @@ class KnihyDobrovskyInvoice(InvoiceTemplate):
 
         for i, h in enumerate(headers):
             if i == 0:
-                textRenderer._text(invoice,d, (x_cols[i] + mm(6), y + mm(3)), h, font=textRenderer._f10b, fill=INK, must_have_same_width=True)
+                textRenderer._text(invoice, (x_cols[i] + mm(6), y + mm(3)), h, font=textRenderer._f10b, fill=INK, must_have_same_width=True)
             else:
-                textRenderer._text_center(invoice,d, x_cols[i] + col_abs[i] / 2, y + mm(2.2), h, textRenderer._f9b, INK, must_have_same_width=True)
+                textRenderer._text_center(invoice, x_cols[i] + col_abs[i] / 2, y + mm(2.2), h, textRenderer._f9b, INK, must_have_same_width=True)
 
         y += head_h2
 
@@ -259,13 +259,13 @@ class KnihyDobrovskyInvoice(InvoiceTemplate):
 
             ty = y + mm(2.4)
 
-            textRenderer._text(invoice,d, (x_cols[0] + mm(6), ty), desc, font=textRenderer._f10, fill=INK)
-            textRenderer._text_center(invoice,d, x_cols[1] + col_abs[1] / 2, ty, qty_txt, textRenderer._f10, INK)
-            textRenderer._text_right(invoice,d, x_cols[2] + col_abs[2] - mm(6), ty, ppu_wo, textRenderer._f10, INK)
-            textRenderer._text_right(invoice,d, x_cols[3] + col_abs[3] - mm(6), ty, total_wo, textRenderer._f10, INK)
-            textRenderer._text_center(invoice,d, x_cols[4] + col_abs[4] / 2, ty, f"{vat_p}%", textRenderer._f10, INK)
-            textRenderer._text_right(invoice,d, x_cols[5] + col_abs[5] - mm(6), ty, vat_amt, textRenderer._f10, INK)
-            textRenderer._text_right(invoice,d, x_cols[6] + col_abs[6] - mm(6), ty, total_w, textRenderer._f10, INK)
+            textRenderer._text(invoice, (x_cols[0] + mm(6), ty), desc, font=textRenderer._f10, fill=INK)
+            textRenderer._text_center(invoice, x_cols[1] + col_abs[1] / 2, ty, qty_txt, textRenderer._f10, INK)
+            textRenderer._text_right(invoice, x_cols[2] + col_abs[2] - mm(6), ty, ppu_wo, textRenderer._f10, INK)
+            textRenderer._text_right(invoice, x_cols[3] + col_abs[3] - mm(6), ty, total_wo, textRenderer._f10, INK)
+            textRenderer._text_center(invoice, x_cols[4] + col_abs[4] / 2, ty, f"{vat_p}%", textRenderer._f10, INK)
+            textRenderer._text_right(invoice, x_cols[5] + col_abs[5] - mm(6), ty, vat_amt, textRenderer._f10, INK)
+            textRenderer._text_right(invoice, x_cols[6] + col_abs[6] - mm(6), ty, total_w, textRenderer._f10, INK)
 
             y += row_h
 
@@ -280,9 +280,8 @@ class KnihyDobrovskyInvoice(InvoiceTemplate):
         total_value = fmt_money(getattr(data, "calculated_total_price", 0))
 
         # label vlevo + částka vpravo (tag TOTAL)
-        textRenderer._text(invoice,d, (x0 + mm(6), y), "Celkem:", font=textRenderer._f11b, fill=INK)
+        textRenderer._text(invoice, (x0 + mm(6), y), "Celkem:", font=textRenderer._f11b, fill=INK)
         textRenderer._text_right(invoice,
-            d,
             x1 - mm(6),
             y,
             total_value,
@@ -301,11 +300,11 @@ class KnihyDobrovskyInvoice(InvoiceTemplate):
         web = getattr(data, "supplier_web", "www.knihydobrovsky.cz")
         issued_ts = getattr(data, "issued_timestamp", datetime.now().strftime("%d.%m.%Y  %H:%M:%S"))
 
-        textRenderer._text(invoice,d, (margin_l, footer_y + mm(4)), f"Tel:  {tel}", font=textRenderer._f9, fill=INK)
-        textRenderer._text(invoice,d, (margin_l, footer_y + mm(9)), safe(email), font=textRenderer._f9, fill=INK)
-        textRenderer._text_center(invoice,d, _A4_W_PX / 2, footer_y + mm(8), f"datum  vystavení:  {issued_ts}", textRenderer._f9, INK)
-        textRenderer._text_right(invoice,d, _A4_W_PX - margin_r, footer_y + mm(4), safe(web), textRenderer._f9, INK)
-        textRenderer._text_right(invoice,d, _A4_W_PX - margin_r, footer_y + mm(9), "Strana:  1", textRenderer._f9, INK)
+        textRenderer._text(invoice, (margin_l, footer_y + mm(4)), f"Tel:  {tel}", font=textRenderer._f9, fill=INK)
+        textRenderer._text(invoice, (margin_l, footer_y + mm(9)), safe(email), font=textRenderer._f9, fill=INK)
+        textRenderer._text_center(invoice, _A4_W_PX / 2, footer_y + mm(8), f"datum  vystavení:  {issued_ts}", textRenderer._f9, INK)
+        textRenderer._text_right(invoice, _A4_W_PX - margin_r, footer_y + mm(4), safe(web), textRenderer._f9, INK)
+        textRenderer._text_right(invoice, _A4_W_PX - margin_r, footer_y + mm(9), "Strana:  1", textRenderer._f9, INK)
 
         invoice.image = img
         return True

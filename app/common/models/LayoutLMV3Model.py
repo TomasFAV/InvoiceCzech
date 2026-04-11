@@ -5,7 +5,7 @@ import numpy as np
 
 from PIL import Image
 
-from invoices_generator.utility.invoice_consts import _A4_H_PX, _A4_W_PX
+from common.utils.consts import _A4_H_PX, _A4_W_PX
 from common.enumerates.TokenTag import TokenTag
 from common.models.TokenClassificationModel import TokenClassificationModel
 
@@ -14,12 +14,21 @@ class LayoutLMV3Model(TokenClassificationModel):
     def __init__(self, model_path="TomasFAV/Layoutlmv3InvoiceCzechV0123"):
         super().__init__(model_path)
 
-    def predict_labels(self, image:Image.Image, words:list[str], bboxes:list[tuple[int,int,int,int]])->list[TokenTag]:
+    def predict_labels(
+    self,
+    image: Image.Image,
+    words: list[str],
+    bboxes: list[tuple[int, int, int, int]]
+    ) -> list[TokenTag]:
         """
-        Vrací pole dvojic id tagů, které je v pořadí slov, která byla zaslána k predikci
+        Vrací tagy ve stejném pořadí jako vstupní words.
         """
+        if len(words) != len(bboxes):
+            raise ValueError(f"words ({len(words)}) a bboxes ({len(bboxes)}) nemají stejnou délku")
+
         image = image.convert("RGB")
         image = image.resize((_A4_W_PX, _A4_H_PX))
+
         encoding = self._processor(
             image,
             text=words,
@@ -30,17 +39,28 @@ class LayoutLMV3Model(TokenClassificationModel):
             max_length=512,
             stride=128,
             padding="max_length",
-            truncation=True
+            truncation=True,
         )
 
-        offset_mapping = encoding.pop('offset_mapping')
-        encoding.pop('overflow_to_sample_mapping', None)
-        encoding["pixel_values"] = torch.stack(encoding["pixel_values"])
+        offset_mapping = encoding.pop("offset_mapping")
+        encoding.pop("overflow_to_sample_mapping", None)
 
-        inputs = {k: v.to(self._device) for k, v in encoding.items()}
-        outputs = self._model(**inputs)
-        all_predictions = outputs.logits.argmax(-1) # [num_chunks, seq_len]
+        # Jen pokud by pixel_values nebyly tensor:
+        # if isinstance(encoding["pixel_values"], list):
+        #     encoding["pixel_values"] = torch.stack(encoding["pixel_values"])
 
+        inputs = {}
+        for k, v in encoding.items():
+            if isinstance(v, list):
+                # typicky pixel_values u LayoutLMv3
+                v = torch.stack(v)
+            inputs[k] = v.to(self._device)
+
+        with torch.no_grad():
+            outputs = self._model(**inputs)
+
+        all_predictions = outputs.logits.argmax(-1).cpu()
+        offset_mapping = offset_mapping.cpu()
 
         labels: list[TokenTag | None] = [None] * len(words)
 
@@ -49,32 +69,22 @@ class LayoutLMV3Model(TokenClassificationModel):
             word_ids = encoding.word_ids(batch_index=window_idx)
             offsets = offset_mapping[window_idx]
 
-            last_word_idx = None
-
             for token_idx, pred_id in enumerate(predictions_tensor):
-                curr_word_idx = word_ids[token_idx]
+                word_id = word_ids[token_idx]
 
-                # přeskoč speciální tokeny
-                if curr_word_idx is None:
+                if word_id is None:
                     continue
 
-                # přeskoč další subtokeny stejného slova
-                if curr_word_idx == last_word_idx:
-                    continue
-
-                # pojistka: ber jen první subtoken slova
+                # ber jen první subtoken slova
                 if offsets[token_idx][0].item() != 0:
                     continue
 
-                # pokud už jsme slovo vyřešili v předchozím okně, nech ho být
-                if labels[curr_word_idx] is not None:
-                    last_word_idx = curr_word_idx
+                # už vyřešeno v předchozím nebo tomto okně
+                if labels[word_id] is not None:
                     continue
 
-                labels[curr_word_idx] = TokenTag.from_id(pred_id.item())
-                last_word_idx = curr_word_idx
+                labels[word_id] = TokenTag.from_id(pred_id.item())
 
-        # fallback, kdyby nějaké slovo nebylo pokryto
         return [
             label if label is not None else TokenTag.from_id(0)
             for label in labels

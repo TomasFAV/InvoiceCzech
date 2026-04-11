@@ -4,12 +4,12 @@ from PIL import Image, ImageDraw
 
 from common.invoice.models.Invoice import Invoice
 from common.invoice.models.InvoiceData import InvoiceData
-from common.invoice.Renderers.TextRenderer import TextRenderer
+from common.invoice.renderers.TextRenderer import TextRenderer
 from common.invoice.models.InvoiceTemplate import InvoiceTemplate
 from common.enumerates.SpanTag import SpanTag
-from invoices_generator.utility.invoice_consts import _A4_H_PX, _A4_W_PX
-from invoices_generator.utility.utils import mm
-from invoices_generator.utility.utils import safe, fmt_money
+from common.utils.consts import _A4_H_PX, _A4_W_PX
+from common.utils.utilities import mm
+from common.utils.utilities import safe, fmt_money
 
 
 @final
@@ -52,12 +52,12 @@ class ColorfullInvoice(InvoiceTemplate):
             d.rectangle((0, i * step_height, _A4_W_PX, (i + 1) * step_height), fill=(r, g, b))
 
         # Text v hlavičce
-        textRenderer._text(invoice,d,(margin_l, margin_t + mm(5)), safe(data.supplier.name), 
+        textRenderer._text(invoice,(margin_l, margin_t + mm(5)), safe(data.supplier.name), 
                     font=textRenderer._f20b, fill=(255, 255, 255))
         
         # Číslo faktury stylizované
         invoice_bg = (255, 255, 255, 180)  # Poloprůhledné pozadí
-        textRenderer._text_right(invoice,d, _A4_W_PX - margin_r, margin_t, 
+        textRenderer._text_right(invoice, _A4_W_PX - margin_r, margin_t, 
                         label="INVOICE #", text=f"{safe(data.invoice_number)}", font=textRenderer._f18b, fill=(255, 255, 255),
                         span_tag=SpanTag.INVOICE_NUMBER)
 
@@ -73,12 +73,12 @@ class ColorfullInvoice(InvoiceTemplate):
                     fill=(255, 255, 255), outline=PRIMARY, width=2)
         d.rectangle((card1_x, y, card1_x + card_width, y + mm(6)), fill=PRIMARY)
         
-        textRenderer._text(invoice,d,(card1_x + mm(3), y + mm(1)), "PRODÁVAJÍCÍ", font=textRenderer._f10b, fill=(255, 255, 255))
-        textRenderer._text(invoice,d,(card1_x + mm(3), y + mm(8)), safe(data.supplier.name), font=textRenderer._f11b, fill=DARK)
-        textRenderer._text(invoice,d,(card1_x + mm(3), y + mm(13)), safe(data.supplier.address)[:25], font=textRenderer._f9, fill=DARK)
-        textRenderer._text(invoice,d,(card1_x + mm(3), y + mm(17)), label="IČ:", text=f"{safe(data.supplier.register_id)}", font=textRenderer._f9, fill=DARK,
+        textRenderer._text(invoice,(card1_x + mm(3), y + mm(1)), "PRODÁVAJÍCÍ", font=textRenderer._f10b, fill=(255, 255, 255))
+        textRenderer._text(invoice,(card1_x + mm(3), y + mm(8)), safe(data.supplier.name), font=textRenderer._f11b, fill=DARK)
+        textRenderer._text(invoice,(card1_x + mm(3), y + mm(13)), safe(data.supplier.address)[:25], font=textRenderer._f9, fill=DARK)
+        textRenderer._text(invoice,(card1_x + mm(3), y + mm(17)), label="IČ:", text=f"{safe(data.supplier.register_id)}", font=textRenderer._f9, fill=DARK,
                     span_tag=SpanTag.SUPPLIER_REGISTER_ID)
-        textRenderer._text(invoice,d,(card1_x + mm(3), y + mm(24)), label="DIČ:", text=f"{safe(data.supplier.tax_id)}", font=textRenderer._f9, fill=DARK,
+        textRenderer._text(invoice,(card1_x + mm(3), y + mm(24)), label="DIČ:", text=f"{safe(data.supplier.tax_id)}", font=textRenderer._f9, fill=DARK,
                     span_tag=SpanTag.SUPPLIER_TAX_ID)
 
         # Karta 2 - Kupující  
@@ -87,12 +87,12 @@ class ColorfullInvoice(InvoiceTemplate):
                     fill=(255, 255, 255), outline=ACCENT, width=2)
         d.rectangle((card2_x, y, card2_x + card_width, y + mm(6)), fill=ACCENT)
         
-        textRenderer._text(invoice,d,(card2_x + mm(3), y + mm(1)), "KUPUJÍCÍ", font=textRenderer._f10b, fill=(255, 255, 255))
-        textRenderer._text(invoice,d,(card2_x + mm(3), y + mm(8)), safe(data.customer.name), font=textRenderer._f11b, fill=DARK)
-        textRenderer._text(invoice,d,(card2_x + mm(3), y + mm(13)), safe(data.customer.address)[:25], font=textRenderer._f9, fill=DARK)
-        textRenderer._text(invoice,d,(card2_x + mm(3), y + mm(17)), label="IČ:", text=f"{safe(data.customer.register_id)}", font=textRenderer._f9, fill=DARK,
+        textRenderer._text(invoice,(card2_x + mm(3), y + mm(1)), "KUPUJÍCÍ", font=textRenderer._f10b, fill=(255, 255, 255))
+        textRenderer._text(invoice,(card2_x + mm(3), y + mm(8)), safe(data.customer.name), font=textRenderer._f11b, fill=DARK)
+        textRenderer._text(invoice,(card2_x + mm(3), y + mm(13)), safe(data.customer.address)[:25], font=textRenderer._f9, fill=DARK)
+        textRenderer._text(invoice,(card2_x + mm(3), y + mm(17)), label="IČ:", text=f"{safe(data.customer.register_id)}", font=textRenderer._f9, fill=DARK,
                     span_tag=SpanTag.CUSTOMER_REGISTER_ID)
-        textRenderer._text(invoice,d,(card2_x + mm(3), y + mm(24)), label="DIČ:", text=f"{safe(data.customer.tax_id)}", font=textRenderer._f9, fill=DARK,
+        textRenderer._text(invoice,(card2_x + mm(3), y + mm(24)), label="DIČ:", text=f"{safe(data.customer.tax_id)}", font=textRenderer._f9, fill=DARK,
                     span_tag=SpanTag.CUSTOMER_TAX_ID)
 
         # Karta 3 - Platba
@@ -101,11 +101,11 @@ class ColorfullInvoice(InvoiceTemplate):
                     fill=(255, 255, 255), outline=SECONDARY, width=2)
         d.rectangle((card3_x, y, card3_x + card_width, y + mm(6)), fill=SECONDARY)
         
-        textRenderer._text(invoice,d,(card3_x + mm(3), y + mm(1)), "PLATBA", font=textRenderer._f10b, fill=(255, 255, 255))
-        textRenderer._text(invoice,d,(card3_x + mm(3), y + mm(8)), label="Datum:", text=f"{safe(data.issue_date)}", font=textRenderer._f9, fill=DARK,
+        textRenderer._text(invoice,(card3_x + mm(3), y + mm(1)), "PLATBA", font=textRenderer._f10b, fill=(255, 255, 255))
+        textRenderer._text(invoice,(card3_x + mm(3), y + mm(8)), label="Datum:", text=f"{safe(data.issue_date)}", font=textRenderer._f9, fill=DARK,
                     span_tag=SpanTag.ISSUE_DATE)
-        textRenderer._text(invoice,d,(card3_x + mm(3), y + mm(12)), label="Splatnost:", text=f"{safe(data.due_date)}", font=textRenderer._f9, fill=DARK, span_tag=SpanTag.DUE_DATE)
-        textRenderer._text(invoice,d,(card3_x + mm(3), y + mm(16)), label="VS: ", text=f"{safe(data.variable_symbol)}", font=textRenderer._f9, fill=DARK, span_tag=SpanTag.VARIABLE_SYMBOL)
+        textRenderer._text(invoice,(card3_x + mm(3), y + mm(12)), label="Splatnost:", text=f"{safe(data.due_date)}", font=textRenderer._f9, fill=DARK, span_tag=SpanTag.DUE_DATE)
+        textRenderer._text(invoice,(card3_x + mm(3), y + mm(16)), label="VS: ", text=f"{safe(data.variable_symbol)}", font=textRenderer._f9, fill=DARK, span_tag=SpanTag.VARIABLE_SYMBOL)
 
         y += card_height + mm(20)
 
@@ -133,12 +133,12 @@ class ColorfullInvoice(InvoiceTemplate):
             text_x = x_cols[i] + mm(3)
             if i in [1, 2, 4]:  # Střed pro množství, jednotku, DPH
                 text_x = x_cols[i] + col_abs[i] // 2
-                textRenderer._text_center(invoice,d, text_x, y + mm(2.5), header, textRenderer._f10b, (255, 255, 255), must_have_same_width=True)
+                textRenderer._text_center(invoice, text_x, y + mm(2.5), header, textRenderer._f10b, (255, 255, 255), must_have_same_width=True)
             elif i in [3, 5]:  # Doprava pro ceny
                 text_x = x_cols[i] + col_abs[i] - mm(3)
-                textRenderer._text_right(invoice,d, text_x, y + mm(2.5), header, textRenderer._f10b, (255, 255, 255), must_have_same_width=True)
+                textRenderer._text_right(invoice, text_x, y + mm(2.5), header, textRenderer._f10b, (255, 255, 255), must_have_same_width=True)
             else:  # Vlevo pro popis
-                textRenderer._text(invoice,d,(text_x, y + mm(2.5)), header, font=textRenderer._f10b, fill=(255, 255, 255), must_have_same_width=True)
+                textRenderer._text(invoice,(text_x, y + mm(2.5)), header, font=textRenderer._f10b, fill=(255, 255, 255), must_have_same_width=True)
 
         y += header_height
 
@@ -160,11 +160,11 @@ class ColorfullInvoice(InvoiceTemplate):
             for j, r_data in enumerate(row_data):
                 text_y = y + mm(2)
                 if j in [1, 2, 4]:  # Střed
-                    textRenderer._text_center(invoice,d, x_cols[j] + col_abs[j] // 2, text_y, r_data, textRenderer._f9, DARK)
+                    textRenderer._text_center(invoice, x_cols[j] + col_abs[j] // 2, text_y, r_data, textRenderer._f9, DARK)
                 elif j in [3, 5]:  # Doprava
-                    textRenderer._text_right(invoice,d, x_cols[j] + col_abs[j] - mm(3), text_y, r_data, textRenderer._f9, DARK)
+                    textRenderer._text_right(invoice, x_cols[j] + col_abs[j] - mm(3), text_y, r_data, textRenderer._f9, DARK)
                 else:  # Vlevo
-                    textRenderer._text(invoice,d,(x_cols[j] + mm(3), text_y), r_data, font=textRenderer._f9, fill=DARK)
+                    textRenderer._text(invoice,(x_cols[j] + mm(3), text_y), r_data, font=textRenderer._f9, fill=DARK)
             
             y += row_height
 
@@ -187,10 +187,10 @@ class ColorfullInvoice(InvoiceTemplate):
         
         # Text
         total_text = f"CELKEM K ÚHRADĚ"
-        textRenderer._text_center(invoice,d, total_x + total_box_w // 2, y + mm(4), 
+        textRenderer._text_center(invoice, total_x + total_box_w // 2, y + mm(4), 
                             total_text, textRenderer._f11b, (255, 255, 255))
         
-        textRenderer._text_center(invoice,d, total_x + total_box_w // 2, y + mm(10), 
+        textRenderer._text_center(invoice, total_x + total_box_w // 2, y + mm(10), 
                             text=f"{fmt_money(data.calculated_total_price)}",
                             end=f"{data.currency.value}", font=textRenderer._f16b, fill=(255, 255, 255), span_tag=SpanTag.TOTAL)
 

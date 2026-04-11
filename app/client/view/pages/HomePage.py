@@ -9,7 +9,7 @@ from common.models.ModelController import Model
 from client.controller.HomePageController import HomePageController
 from common.view.components.Menu import Menu
 from common.view.components.ExportInvoiceCanvas import ExportInvoiceCanvas
-from common.view.components.InvoiceForm import Form, FormConfig
+from common.view.components.Form import Form, FormConfig
 from common.invoice.OperationResult import OperationResult
 from common.view.View import View
 
@@ -33,7 +33,6 @@ class HomePage(View):
             Model.LiLT.value:False,
             Model.LayoutLMV3.value:False,
             Model.Donut.value: False,
-            Model.Pix2Struct.value: False
         }
         
         self.build()

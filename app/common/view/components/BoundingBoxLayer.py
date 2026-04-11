@@ -1,10 +1,10 @@
+from dataclasses import dataclass
 from typing import Callable
-from attr import dataclass
 from common.utils.consts import GROUP_OVERLAY
 from common.invoice.models.GSegment import GSegment
 from common.invoice.models.GToken import GToken
 from common.invoice.models.GSpan import GSpan
-from common.view.components.Canvas import ImageCanvas
+from common.view.components.ImageCanvas import ImageCanvas
 
 Drawable = GSpan | GToken | GSegment
 

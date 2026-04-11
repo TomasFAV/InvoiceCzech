@@ -6,13 +6,13 @@ from decimal import ROUND_HALF_UP
 
 from common.invoice.models.Invoice import Invoice
 from common.invoice.models.InvoiceData import InvoiceData
-from common.invoice.Renderers.TextRenderer import TextRenderer
+from common.invoice.renderers.TextRenderer import TextRenderer
 from common.invoice.models.InvoiceTemplate import InvoiceTemplate
 from common.enumerates.SpanTag import SpanTag
 
-from invoices_generator.utility.invoice_consts import _A4_H_PX, _A4_W_PX, INK, MUTED, LINE, LINE_MID, LINE_STRONG, BG, SUBTLE_BG, FOOT_BG, BOX_BG, TMOBILE_PINK
-from invoices_generator.utility.utils import mm
-from invoices_generator.utility.utils import safe, fmt_money
+from common.utils.consts import _A4_H_PX, _A4_W_PX, INK, MUTED, LINE, LINE_MID, LINE_STRONG, BG, SUBTLE_BG, FOOT_BG, BOX_BG, TMOBILE_PINK
+from common.utils.utilities import mm
+from common.utils.utilities import safe, fmt_money
 
 
 @final
@@ -42,7 +42,7 @@ class MartinusInvoice(InvoiceTemplate):
         # --- TOP SECTION WITH BARCODE AND SHIPPING INFO ---
         # Left side - Barcode and ZAS label
         barcode_x = margin_l
-        textRenderer._text(invoice, d, (barcode_x, y), text="ZAS", font=textRenderer._f16b, fill=INK)
+        textRenderer._text(invoice, (barcode_x, y), text="ZAS", font=textRenderer._f16b, fill=INK)
         y_barcode = y + mm(8)
         
         # Draw barcode placeholder
@@ -53,7 +53,7 @@ class MartinusInvoice(InvoiceTemplate):
         
         # Order number below barcode
         y_order = y_barcode + barcode_h + mm(3)
-        textRenderer._text(invoice, d, (barcode_x, y_order), text=safe(data.variable_symbol), 
+        textRenderer._text(invoice, (barcode_x, y_order), text=safe(data.variable_symbol), 
                   font=textRenderer._f13b, fill=INK, span_tag=SpanTag.VARIABLE_SYMBOL)
         
         # Another barcode below
@@ -65,38 +65,38 @@ class MartinusInvoice(InvoiceTemplate):
         package_x = _A4_W_PX - margin_r - mm(80)
         d.rectangle((package_x - mm(5), y, package_x + mm(50), y + mm(15)), 
                    outline=LINE, width=2, fill=BG)
-        textRenderer._text_center(invoice, d, package_x + mm(22), y + mm(6), 
+        textRenderer._text_center(invoice, package_x + mm(22), y + mm(6), 
                          text=safe(data.variable_symbol), font=textRenderer._f17b, fill=INK,
                          span_tag=SpanTag.VARIABLE_SYMBOL)
         
         # Invoice type label
         y_type = y + mm(17)
-        textRenderer._text_right(invoice, d, _A4_W_PX - margin_r, y_type, 
+        textRenderer._text_right(invoice, _A4_W_PX - margin_r, y_type, 
                         text="FAKTURA", font=textRenderer._f10, fill=INK)
-        textRenderer._text_right(invoice, d, _A4_W_PX - margin_r, y_type + mm(4), 
+        textRenderer._text_right(invoice, _A4_W_PX - margin_r, y_type + mm(4), 
                         text=safe(data.invoice_number), font=textRenderer._f10b, fill=INK,
                         span_tag=SpanTag.INVOICE_NUMBER)
-        textRenderer._text_right(invoice, d, _A4_W_PX - margin_r, y_type + mm(8), 
+        textRenderer._text_right(invoice, _A4_W_PX - margin_r, y_type + mm(8), 
                         text="Daňový doklad", font=textRenderer._f9, fill=MUTED)
 
         # Shipping address in left section
         y_ship = y_barcode + mm(2)
         ship_x = barcode_x + barcode_w + mm(10)
-        textRenderer._text(invoice, d, (ship_x, y_ship), text="Tel na zákazníka:", 
+        textRenderer._text(invoice, (ship_x, y_ship), text="Tel na zákazníka:", 
                   font=textRenderer._f9, fill=MUTED)
-        textRenderer._text(invoice, d, (ship_x + mm(25), y_ship), text=safe(data.customer.phone) if hasattr(data.customer, 'phone') else "", 
+        textRenderer._text(invoice, (ship_x + mm(25), y_ship), text=safe(data.customer.phone) if hasattr(data.customer, 'phone') else "", 
                   font=textRenderer._f9b, fill=INK)
         
         y_ship += mm(6)
-        textRenderer._text(invoice, d, (ship_x, y_ship), text=safe(data.customer.name), 
+        textRenderer._text(invoice, (ship_x, y_ship), text=safe(data.customer.name), 
                   font=textRenderer._f11b, fill=INK)
         y_ship += mm(5)
-        textRenderer._text(invoice, d, (ship_x, y_ship), text=safe(data.customer.address), 
+        textRenderer._text(invoice, (ship_x, y_ship), text=safe(data.customer.address), 
                   font=textRenderer._f11, fill=INK)
 
         # Logo martinus.cz
         logo_y = y + mm(35)
-        textRenderer._text_right(invoice, d, _A4_W_PX - margin_r, logo_y, 
+        textRenderer._text_right(invoice, _A4_W_PX - margin_r, logo_y, 
                         text="martinus.cz", font=textRenderer._f20b, fill=INK)
 
         y = logo_y + mm(15)
@@ -113,79 +113,79 @@ class MartinusInvoice(InvoiceTemplate):
         right_x = margin_l + col_w + col_gap
 
         # Left column - Supplier (Prodávající)
-        textRenderer._text(invoice, d, (left_x, y), text="Prodávající:", font=textRenderer._f11b, fill=INK)
+        textRenderer._text(invoice, (left_x, y), text="Prodávající:", font=textRenderer._f11b, fill=INK)
         y_left = y + mm(5)
         
-        textRenderer._text(invoice, d, (left_x, y_left), text=safe(data.supplier.name), font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (left_x, y_left), text=safe(data.supplier.name), font=textRenderer._f10, fill=INK)
         y_left += mm(4)
-        textRenderer._text(invoice, d, (left_x, y_left), text=safe(data.supplier.address), font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (left_x, y_left), text=safe(data.supplier.address), font=textRenderer._f10, fill=INK)
         y_left += mm(8)
         
-        textRenderer._text(invoice, d, (left_x, y_left), text=f"Tel.: {safe(data.supplier.phone) if hasattr(data.supplier, 'phone') else ''}", 
+        textRenderer._text(invoice, (left_x, y_left), text=f"Tel.: {safe(data.supplier.phone) if hasattr(data.supplier, 'phone') else ''}", 
                   font=textRenderer._f9, fill=INK)
         y_left += mm(4)
-        textRenderer._text(invoice, d, (left_x, y_left), text=f"E-mail: {safe(data.supplier.email) if hasattr(data.supplier, 'email') else ''}", 
+        textRenderer._text(invoice, (left_x, y_left), text=f"E-mail: {safe(data.supplier.email) if hasattr(data.supplier, 'email') else ''}", 
                   font=textRenderer._f9, fill=INK)
-        textRenderer._text(invoice, d, (left_x + mm(20), y_left), text=f"Web: {safe(data.supplier.website) if hasattr(data.supplier, 'website') else ''}", 
+        textRenderer._text(invoice, (left_x + mm(20), y_left), text=f"Web: {safe(data.supplier.website) if hasattr(data.supplier, 'website') else ''}", 
                   font=textRenderer._f9, fill=INK)
         y_left += mm(8)
         
-        textRenderer._text(invoice, d, (left_x, y_left), text="IČO:", font=textRenderer._f9, fill=INK)
-        textRenderer._text(invoice, d, (left_x + mm(10), y_left), text=safe(data.supplier.register_id), 
+        textRenderer._text(invoice, (left_x, y_left), text="IČO:", font=textRenderer._f9, fill=INK)
+        textRenderer._text(invoice, (left_x + mm(10), y_left), text=safe(data.supplier.register_id), 
                   font=textRenderer._f9b, fill=INK, span_tag=SpanTag.SUPPLIER_REGISTER_ID)
-        textRenderer._text(invoice, d, (left_x + mm(30), y_left), text="DIČ:", font=textRenderer._f9, fill=INK)
-        textRenderer._text(invoice, d, (left_x + mm(40), y_left), text=safe(data.supplier.tax_id), 
+        textRenderer._text(invoice, (left_x + mm(30), y_left), text="DIČ:", font=textRenderer._f9, fill=INK)
+        textRenderer._text(invoice, (left_x + mm(40), y_left), text=safe(data.supplier.tax_id), 
                   font=textRenderer._f9b, fill=INK, span_tag=SpanTag.SUPPLIER_TAX_ID)
-        textRenderer._text(invoice, d, (left_x + mm(60), y_left), text="IČ DPH:", font=textRenderer._f9, fill=INK)
-        textRenderer._text(invoice, d, (left_x + mm(75), y_left), text=safe(data.supplier.vat_id) if hasattr(data.supplier, 'vat_id') else "", 
+        textRenderer._text(invoice, (left_x + mm(60), y_left), text="IČ DPH:", font=textRenderer._f9, fill=INK)
+        textRenderer._text(invoice, (left_x + mm(75), y_left), text=safe(data.supplier.vat_id) if hasattr(data.supplier, 'vat_id') else "", 
                   font=textRenderer._f9b, fill=INK)
         y_left += mm(8)
         
-        textRenderer._text(invoice, d, (left_x, y_left), text="Bank account details:", font=textRenderer._f9, fill=INK)
+        textRenderer._text(invoice, (left_x, y_left), text="Bank account details:", font=textRenderer._f9, fill=INK)
         y_left += mm(4)
-        textRenderer._text(invoice, d, (left_x, y_left),
+        textRenderer._text(invoice, (left_x, y_left),
                     label="Číslo účtu:", 
                     text=f"{safe(data.bank_account_number)}", 
                     font=textRenderer._f9b, fill=INK, span_tag=SpanTag.BANK_ACCOUNT_NUMBER)
         y_left += mm(4)
-        textRenderer._text(invoice, d, (left_x, y_left), 
+        textRenderer._text(invoice, (left_x, y_left), 
                   label="IBAN:", text=f"{safe(data.IBAN)}", 
                   font=textRenderer._f9, fill=INK, span_tag=SpanTag.IBAN)
         y_left += mm(4)
-        textRenderer._text(invoice, d, (left_x, y_left), 
+        textRenderer._text(invoice, (left_x, y_left), 
                   label="BIC: ",
                   text=f"{safe(data.bank_account.BIC)}", 
                   font=textRenderer._f9, fill=INK, span_tag=SpanTag.BIC)
         y_left += mm(8)
         
         # Delivery address
-        textRenderer._text(invoice, d, (left_x, y_left), text="Konečný příjemce:", font=textRenderer._f9, fill=INK)
+        textRenderer._text(invoice, (left_x, y_left), text="Konečný příjemce:", font=textRenderer._f9, fill=INK)
         y_left += mm(4)
         delivery_text = safe(data.delivery_address) if hasattr(data, 'delivery_address') else "Same as billing"
-        textRenderer._text(invoice, d, (left_x, y_left), text=delivery_text, font=textRenderer._f9, fill=INK)
+        textRenderer._text(invoice, (left_x, y_left), text=delivery_text, font=textRenderer._f9, fill=INK)
 
         # Right column - Customer and dates
-        textRenderer._text(invoice, d, (right_x, y), text="Objednávka:", font=textRenderer._f11b, fill=INK)
+        textRenderer._text(invoice, (right_x, y), text="Objednávka:", font=textRenderer._f11b, fill=INK)
         y_right = y + mm(5)
         
         # Order number
-        textRenderer._text(invoice, d, (right_x, y_right), text="č.", font=textRenderer._f9, fill=INK)
-        textRenderer._text(invoice, d, (right_x + mm(10), y_right), text=safe(data.invoice_number), 
+        textRenderer._text(invoice, (right_x, y_right), text="č.", font=textRenderer._f9, fill=INK)
+        textRenderer._text(invoice, (right_x + mm(10), y_right), text=safe(data.invoice_number), 
                   font=textRenderer._f9b, fill=INK, span_tag=SpanTag.INVOICE_NUMBER)
-        textRenderer._text(invoice, d, (right_x + mm(40), y_right), text="ze dne", font=textRenderer._f9, fill=INK)
-        textRenderer._text(invoice, d, (right_x + mm(52), y_right), text=safe(data.issue_date), 
+        textRenderer._text(invoice, (right_x + mm(40), y_right), text="ze dne", font=textRenderer._f9, fill=INK)
+        textRenderer._text(invoice, (right_x + mm(52), y_right), text=safe(data.issue_date), 
                   font=textRenderer._f9b, fill=INK, span_tag=SpanTag.ISSUE_DATE)
         y_right += mm(5)
         
         # Variable symbol
-        textRenderer._text(invoice, d, (right_x, y_right), text="Variabilní symbol:", font=textRenderer._f9, fill=INK)
-        textRenderer._text(invoice, d, (right_x + mm(30), y_right), text=safe(data.variable_symbol), 
+        textRenderer._text(invoice, (right_x, y_right), text="Variabilní symbol:", font=textRenderer._f9, fill=INK)
+        textRenderer._text(invoice, (right_x + mm(30), y_right), text=safe(data.variable_symbol), 
                   font=textRenderer._f9b, fill=INK, span_tag=SpanTag.VARIABLE_SYMBOL)
         y_right += mm(5)
         
         # Payment method
-        textRenderer._text(invoice, d, (right_x, y_right), text="Způsob platby:", font=textRenderer._f9, fill=INK)
-        textRenderer._text(invoice, d, (right_x + mm(30), y_right), text=safe(data.payment_type), 
+        textRenderer._text(invoice, (right_x, y_right), text="Způsob platby:", font=textRenderer._f9, fill=INK)
+        textRenderer._text(invoice, (right_x + mm(30), y_right), text=safe(data.payment_type), 
                   font=textRenderer._f9b, fill=INK, span_tag=SpanTag.PAYMENT_TYPE)
         y_right += mm(10)
 
@@ -196,30 +196,30 @@ class MartinusInvoice(InvoiceTemplate):
         inner_x = right_x + mm(3)
         inner_y = y_right + mm(3)
         
-        textRenderer._text(invoice, d, (inner_x, inner_y), text="Odběratel:", font=textRenderer._f10b, fill=INK)
+        textRenderer._text(invoice, (inner_x, inner_y), text="Odběratel:", font=textRenderer._f10b, fill=INK)
         inner_y += mm(6)
-        textRenderer._text(invoice, d, (inner_x, inner_y), text=safe(data.customer.name), font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (inner_x, inner_y), text=safe(data.customer.name), font=textRenderer._f10, fill=INK)
         inner_y += mm(5)
-        textRenderer._text(invoice, d, (inner_x, inner_y), text=safe(data.customer.address), font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (inner_x, inner_y), text=safe(data.customer.address), font=textRenderer._f10, fill=INK)
         inner_y += mm(5)
-        textRenderer._text(invoice, d, (inner_x, inner_y), text="Česká republika", font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (inner_x, inner_y), text="Česká republika", font=textRenderer._f10, fill=INK)
         
         y_right += mm(40)
         
         # Dates
-        textRenderer._text(invoice, d, (right_x, y_right), text="Datum vystavení:", font=textRenderer._f9, fill=INK)
-        textRenderer._text(invoice, d, (right_x + mm(35), y_right), text=safe(data.issue_date), 
+        textRenderer._text(invoice, (right_x, y_right), text="Datum vystavení:", font=textRenderer._f9, fill=INK)
+        textRenderer._text(invoice, (right_x + mm(35), y_right), text=safe(data.issue_date), 
                   font=textRenderer._f9b, fill=INK, span_tag=SpanTag.ISSUE_DATE)
         y_right += mm(5)
         
-        textRenderer._text(invoice, d, (right_x, y_right), text="Datum splatnosti:", font=textRenderer._f9, fill=INK)
-        textRenderer._text(invoice, d, (right_x + mm(35), y_right), text=safe(data.due_date), 
+        textRenderer._text(invoice, (right_x, y_right), text="Datum splatnosti:", font=textRenderer._f9, fill=INK)
+        textRenderer._text(invoice, (right_x + mm(35), y_right), text=safe(data.due_date), 
                   font=textRenderer._f9b, fill=INK, span_tag=SpanTag.DUE_DATE)
         y_right += mm(5)
         
-        textRenderer._text(invoice, d, (right_x, y_right), text="Datum uskutečnění zdanitelného plnění:", 
+        textRenderer._text(invoice, (right_x, y_right), text="Datum uskutečnění zdanitelného plnění:", 
                   font=textRenderer._f9, fill=INK)
-        textRenderer._text(invoice, d, (right_x + mm(65), y_right), text=safe(data.taxable_supply_date), 
+        textRenderer._text(invoice, (right_x + mm(65), y_right), text=safe(data.taxable_supply_date), 
                   font=textRenderer._f9b, fill=INK, span_tag=SpanTag.TAXABLE_SUPPLY_DATE)
 
         y = max(y_left, y_right) + mm(10)
@@ -240,9 +240,9 @@ class MartinusInvoice(InvoiceTemplate):
         baseline = y + mm(2)
         for i, h in enumerate(headers):
             if i in (0, 1):
-                textRenderer._text(invoice, d, (x_cols[i] + 3, baseline), h, font=textRenderer._f9b, fill=INK, must_have_same_width=True)
+                textRenderer._text(invoice, (x_cols[i] + 3, baseline), h, font=textRenderer._f9b, fill=INK, must_have_same_width=True)
             else:
-                textRenderer._text_center(invoice, d, x_cols[i] + col_abs[i] / 2, baseline, h, textRenderer._f9b, INK, must_have_same_width=True)
+                textRenderer._text_center(invoice, x_cols[i] + col_abs[i] / 2, baseline, h, textRenderer._f9b, INK, must_have_same_width=True)
         y += head_h
         hr(y, "strong")
 
@@ -264,11 +264,11 @@ class MartinusInvoice(InvoiceTemplate):
             ]
             
             y_text = y - row_h + mm(2)
-            textRenderer._text(invoice, d, (x_cols[0] + 3, y_text), cells[0], font=textRenderer._f9, fill=INK)
-            textRenderer._text(invoice, d, (x_cols[1] + 3, y_text), cells[1], font=textRenderer._f9, fill=INK)
+            textRenderer._text(invoice, (x_cols[0] + 3, y_text), cells[0], font=textRenderer._f9, fill=INK)
+            textRenderer._text(invoice, (x_cols[1] + 3, y_text), cells[1], font=textRenderer._f9, fill=INK)
             
             for i in range(2, 8):
-                textRenderer._text_center(invoice, d, x_cols[i] + col_abs[i] / 2, y_text, cells[i], textRenderer._f9, INK)
+                textRenderer._text_center(invoice, x_cols[i] + col_abs[i] / 2, y_text, cells[i], textRenderer._f9, INK)
 
         # Table footer
         y += mm(3)
@@ -280,22 +280,22 @@ class MartinusInvoice(InvoiceTemplate):
         vat_headers = ["Sazba DPH", "Základ DPH", "Suma DPH"]
         vat_col_w = vat_box_w / 3
         
-        textRenderer._text_center(invoice, d, margin_l + vat_col_w * 0.5, y, vat_headers[0], textRenderer._f9b, INK)
-        textRenderer._text_center(invoice, d, margin_l + vat_col_w * 1.5, y, vat_headers[1], textRenderer._f9b, INK)
-        textRenderer._text_center(invoice, d, margin_l + vat_col_w * 2.5, y, vat_headers[2], textRenderer._f9b, INK)
+        textRenderer._text_center(invoice, margin_l + vat_col_w * 0.5, y, vat_headers[0], textRenderer._f9b, INK)
+        textRenderer._text_center(invoice, margin_l + vat_col_w * 1.5, y, vat_headers[1], textRenderer._f9b, INK)
+        textRenderer._text_center(invoice, margin_l + vat_col_w * 2.5, y, vat_headers[2], textRenderer._f9b, INK)
         
         y += mm(6)
         hr(y, "mid", margin_l, margin_l + vat_box_w)
         
         for v in data.vat:
             y += mm(5)
-            _, percentage_id = textRenderer._text_center(invoice, d, margin_l + vat_col_w * 0.5, y, 
+            _, percentage_id = textRenderer._text_center(invoice, margin_l + vat_col_w * 0.5, y, 
                                                 f"{safe(v.vat_percentage)}%", textRenderer._f9, INK, 
                                                 span_tag=SpanTag.O)
-            _, base_id = textRenderer._text_center(invoice, d, margin_l + vat_col_w * 1.5, y, 
+            _, base_id = textRenderer._text_center(invoice, margin_l + vat_col_w * 1.5, y, 
                                           fmt_money(v.vat_base), textRenderer._f9, INK, 
                                           span_tag=SpanTag.O)
-            _, vat_id = textRenderer._text_center(invoice, d, margin_l + vat_col_w * 2.5, y, 
+            _, vat_id = textRenderer._text_center(invoice, margin_l + vat_col_w * 2.5, y, 
                                          fmt_money(v.vat), textRenderer._f9, INK, 
                                          span_tag=SpanTag.O)
             
@@ -305,11 +305,11 @@ class MartinusInvoice(InvoiceTemplate):
         hr(y, "mid", margin_l, margin_l + vat_box_w)
         
         y += mm(5)
-        textRenderer._text_center(invoice, d, margin_l + vat_col_w * 0.5, y, "Celkem", textRenderer._f9b, INK)
+        textRenderer._text_center(invoice, margin_l + vat_col_w * 0.5, y, "Celkem", textRenderer._f9b, INK)
         total_base = sum(float(v.vat_base) for v in data.vat)
         total_vat = sum(float(v.vat) for v in data.vat)
-        textRenderer._text_center(invoice, d, margin_l + vat_col_w * 1.5, y, fmt_money(total_base), textRenderer._f9b, INK)
-        textRenderer._text_center(invoice, d, margin_l + vat_col_w * 2.5, y, fmt_money(total_vat), textRenderer._f9b, INK)
+        textRenderer._text_center(invoice, margin_l + vat_col_w * 1.5, y, fmt_money(total_base), textRenderer._f9b, INK)
+        textRenderer._text_center(invoice, margin_l + vat_col_w * 2.5, y, fmt_money(total_vat), textRenderer._f9b, INK)
 
         # Total summary (right side)
         summary_x = _A4_W_PX - margin_r - mm(60)
@@ -322,12 +322,12 @@ class MartinusInvoice(InvoiceTemplate):
         def summary_row(label: str, value: str, y_pos: int, bold: bool = False, tag=SpanTag.O, end=None):
             font_l = textRenderer._f10b if bold else textRenderer._f10
             font_v = textRenderer._f10b if bold else textRenderer._f10
-            textRenderer._text_right(invoice, d, summary_x + mm(20), y_pos, label, font_l, INK)
+            textRenderer._text_right(invoice, summary_x + mm(20), y_pos, label, font_l, INK)
             if not end:
-                textRenderer._text_right(invoice, d, _A4_W_PX - margin_r - mm(3), y_pos, value, font_v, INK, 
+                textRenderer._text_right(invoice, _A4_W_PX - margin_r - mm(3), y_pos, value, font_v, INK, 
                            span_tag=tag)
             else:
-                textRenderer._text_right(invoice, d, _A4_W_PX - margin_r - mm(3), y_pos, value, font_v, INK, end=end,
+                textRenderer._text_right(invoice, _A4_W_PX - margin_r - mm(3), y_pos, value, font_v, INK, end=end,
                            span_tag=tag)
                 
         summary_row("Suma bez DPH", fmt_money(total_base), y_summary)
@@ -350,15 +350,15 @@ class MartinusInvoice(InvoiceTemplate):
         
         # Footer message
         footer_msg = f"Tímto nákupem jste právě ušetřili {fmt_money(293.00)} Kč :-)"
-        textRenderer._text(invoice, d, (margin_l, y), footer_msg, font=textRenderer._f10b, fill=INK)
+        textRenderer._text(invoice, (margin_l, y), footer_msg, font=textRenderer._f10b, fill=INK)
         y += mm(8)
         
         # Additional info
-        textRenderer._text(invoice, d, (margin_l, y), 
+        textRenderer._text(invoice, (margin_l, y), 
                   "Jak jste byli spokojení s našimi službami? Ohodnoťte nás!", 
                   font=textRenderer._f9, fill=INK)
         y += mm(4)
-        textRenderer._text(invoice, d, (margin_l, y), 
+        textRenderer._text(invoice, (margin_l, y), 
                   "Zkontrolujte, prosím, kompletnost vaší zásilky.", 
                   font=textRenderer._f9, fill=INK)
         
@@ -368,7 +368,7 @@ class MartinusInvoice(InvoiceTemplate):
         barcode_bottom_x = margin_l
         d.rectangle((barcode_bottom_x, y, barcode_bottom_x + mm(30), y + mm(12)), 
                    outline=LINE, width=2, fill=BG)
-        textRenderer._text_center(invoice, d, barcode_bottom_x + mm(15), y + mm(5), 
+        textRenderer._text_center(invoice, barcode_bottom_x + mm(15), y + mm(5), 
                          safe(data.variable_symbol), textRenderer._f10, INK)
 
         # Save

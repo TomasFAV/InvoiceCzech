@@ -6,11 +6,11 @@ from PIL import Image, ImageDraw
 from common.invoice.models.Invoice import Invoice
 from common.invoice.models.InvoiceData import InvoiceData
 from common.invoice.models.InvoiceTemplate import InvoiceTemplate
-from common.invoice.Renderers.TextRenderer import TextRenderer
+from common.invoice.renderers.TextRenderer import TextRenderer
 from common.enumerates.SpanTag import SpanTag
 
-from invoices_generator.utility.invoice_consts import _A4_H_PX, _A4_W_PX, INK, MUTED, LINE, LINE_MID, LINE_STRONG, BG
-from invoices_generator.utility.utils import mm, safe, fmt_money
+from common.utils.consts import _A4_H_PX, _A4_W_PX, INK, MUTED, LINE, LINE_MID, LINE_STRONG, BG
+from common.utils.utilities import mm, safe, fmt_money
 
 
 @final
@@ -74,12 +74,11 @@ class OreaHotelInvoice(InvoiceTemplate):
 
         # „OREA“ vlevo + podtitul (hotel)
         # (logo řeš jen jako text; pro variabilitu datasetu občas přepínej velikost/rozestupy)
-        textRenderer._text(invoice, d, (content_x0 + mm(6), y + mm(6)), "O R E A", font=textRenderer._f18b, fill=INK)
-        textRenderer._text(invoice, d, (content_x0 + mm(6), y + mm(14)), safe(getattr(data, "supplier_branch", "Hotel Angelo\nPraha")), font=textRenderer._f10, fill=MUTED)
+        textRenderer._text(invoice, (content_x0 + mm(6), y + mm(6)), "O R E A", font=textRenderer._f18b, fill=INK)
+        textRenderer._text(invoice, (content_x0 + mm(6), y + mm(14)), safe(getattr(data, "supplier_branch", "Hotel Angelo\nPraha")), font=textRenderer._f10, fill=MUTED)
 
         # Titul dokumentu
-        textRenderer._text(invoice, 
-            d,
+        textRenderer._text(invoice,
             (content_x0 + mm(55), y + mm(7)),
             "Hotelový účet - daňový doklad",
             font=textRenderer._f16b,
@@ -89,7 +88,6 @@ class OreaHotelInvoice(InvoiceTemplate):
         # tag: INVOICE_NUMBER
         inv_no = safe(getattr(data, "invoice_number", ""))
         textRenderer._text(invoice, 
-            d,
             (content_x0 + mm(55), y + mm(16)),
             f"{inv_no}",
             label="Číslo: ",
@@ -105,8 +103,7 @@ class OreaHotelInvoice(InvoiceTemplate):
         by0 = y + mm(4)
         by1 = by0 + box_h
         rect(bx0, by0, bx1, by1, weight="mid", fill=None)
-        textRenderer._text_center(invoice, 
-            d,
+        textRenderer._text_center(invoice,
             (bx0 + bx1) / 2,
             by0 + mm(1.2),
             inv_no,
@@ -132,36 +129,36 @@ class OreaHotelInvoice(InvoiceTemplate):
         ly0 = y
         cur_y = ly0 + pad
 
-        textRenderer._text(invoice, d, (lx0 + pad, cur_y), "Dodavatel:", font=textRenderer._f12b, fill=INK)
+        textRenderer._text(invoice, (lx0 + pad, cur_y), "Dodavatel:", font=textRenderer._f12b, fill=INK)
         cur_y += mm(6)
 
         # Dodavatel – volitelně s tagy na IČ/DIČ
-        textRenderer._text(invoice, d, (lx0 + pad, cur_y), safe(data.supplier.name), font=textRenderer._f11b, fill=INK)
+        textRenderer._text(invoice, (lx0 + pad, cur_y), safe(data.supplier.name), font=textRenderer._f11b, fill=INK)
         cur_y += mm(5.2)
-        textRenderer._text(invoice, d, (lx0 + pad, cur_y), safe(data.supplier.address), font=textRenderer._f11, fill=INK)
+        textRenderer._text(invoice, (lx0 + pad, cur_y), safe(data.supplier.address), font=textRenderer._f11, fill=INK)
         cur_y += mm(5.2)
 
         # IČO/DIČ (tagy)
-        textRenderer._text(invoice, d, (lx0 + pad, cur_y), "IČO", font=textRenderer._f11, fill=INK)
-        textRenderer._text(invoice, d, (lx0 + pad + mm(44), cur_y), safe(data.supplier.register_id), font=textRenderer._f11, fill=INK,
+        textRenderer._text(invoice, (lx0 + pad, cur_y), "IČO", font=textRenderer._f11, fill=INK)
+        textRenderer._text(invoice, (lx0 + pad + mm(44), cur_y), safe(data.supplier.register_id), font=textRenderer._f11, fill=INK,
                    span_tag=SpanTag.SUPPLIER_REGISTER_ID)
         cur_y += mm(5.2)
 
-        textRenderer._text(invoice, d, (lx0 + pad, cur_y), "DIČ", font=textRenderer._f11, fill=INK)
-        textRenderer._text(invoice, d, (lx0 + pad + mm(44), cur_y), safe(data.supplier.tax_id), font=textRenderer._f11, fill=INK,
+        textRenderer._text(invoice, (lx0 + pad, cur_y), "DIČ", font=textRenderer._f11, fill=INK)
+        textRenderer._text(invoice, (lx0 + pad + mm(44), cur_y), safe(data.supplier.tax_id), font=textRenderer._f11, fill=INK,
                    span_tag=SpanTag.SUPPLIER_TAX_ID)
         cur_y += mm(6.5)
 
         # Provozovna
-        textRenderer._text(invoice, d, (lx0 + pad, cur_y), "Provozovna", font=textRenderer._f12b, fill=INK)
+        textRenderer._text(invoice, (lx0 + pad, cur_y), "Provozovna", font=textRenderer._f12b, fill=INK)
         cur_y += mm(6)
-        textRenderer._text(invoice, d, (lx0 + pad, cur_y), safe(getattr(data, "supplier_branch_name", data.supplier.name)), font=textRenderer._f11, fill=INK)
+        textRenderer._text(invoice, (lx0 + pad, cur_y), safe(getattr(data, "supplier_branch_name", data.supplier.name)), font=textRenderer._f11, fill=INK)
         cur_y += mm(5.2)
-        textRenderer._text(invoice, d, (lx0 + pad, cur_y), safe(getattr(data, "supplier_branch_address", data.supplier.address)), font=textRenderer._f11, fill=INK)
+        textRenderer._text(invoice, (lx0 + pad, cur_y), safe(getattr(data, "supplier_branch_address", data.supplier.address)), font=textRenderer._f11, fill=INK)
         cur_y += mm(7)
 
         # Bankovní spojení (CZK/EUR – můžeš generovat víc účtů)
-        textRenderer._text(invoice, d, (lx0 + pad, cur_y), "Bankovní spojení", font=textRenderer._f12b, fill=INK)
+        textRenderer._text(invoice, (lx0 + pad, cur_y), "Bankovní spojení", font=textRenderer._f12b, fill=INK)
         cur_y += mm(6)
 
         # 1) CZK účet
@@ -169,18 +166,18 @@ class OreaHotelInvoice(InvoiceTemplate):
         iban = safe(getattr(data, "IBAN", ""))
         bic = safe(getattr(data.bank_account, "BIC", "")) if getattr(data, "bank_account", None) else ""
 
-        textRenderer._text(invoice, d, (lx0 + pad, cur_y), "CZK", font=textRenderer._f11, fill=INK)
-        textRenderer._text(invoice, d, (lx0 + pad + mm(38), cur_y), acct, font=textRenderer._f11, fill=INK,
+        textRenderer._text(invoice, (lx0 + pad, cur_y), "CZK", font=textRenderer._f11, fill=INK)
+        textRenderer._text(invoice, (lx0 + pad + mm(38), cur_y), acct, font=textRenderer._f11, fill=INK,
                    span_tag=SpanTag.BANK_ACCOUNT_NUMBER)
         cur_y += mm(5.0)
 
-        textRenderer._text(invoice, d, (lx0 + pad, cur_y), "IBAN", font=textRenderer._f11, fill=INK)
-        textRenderer._text(invoice, d, (lx0 + pad + mm(38), cur_y), iban, font=textRenderer._f11, fill=INK,
+        textRenderer._text(invoice, (lx0 + pad, cur_y), "IBAN", font=textRenderer._f11, fill=INK)
+        textRenderer._text(invoice, (lx0 + pad + mm(38), cur_y), iban, font=textRenderer._f11, fill=INK,
                    span_tag=SpanTag.IBAN)
         cur_y += mm(5.0)
 
-        textRenderer._text(invoice, d, (lx0 + pad, cur_y), "SWIFT", font=textRenderer._f11, fill=INK)
-        textRenderer._text(invoice, d, (lx0 + pad + mm(38), cur_y), safe(bic), font=textRenderer._f11, fill=INK,
+        textRenderer._text(invoice, (lx0 + pad, cur_y), "SWIFT", font=textRenderer._f11, fill=INK)
+        textRenderer._text(invoice, (lx0 + pad + mm(38), cur_y), safe(bic), font=textRenderer._f11, fill=INK,
                    span_tag=SpanTag.BIC)
 
         # ---- pravý blok: Odběratel + platební metadata -----------------------
@@ -188,20 +185,20 @@ class OreaHotelInvoice(InvoiceTemplate):
         ry0 = y
         cur2_y = ry0 + pad
 
-        textRenderer._text(invoice, d, (rx0 + pad, cur2_y), "Odběratel - plátce", font=textRenderer._f12b, fill=INK)
+        textRenderer._text(invoice, (rx0 + pad, cur2_y), "Odběratel - plátce", font=textRenderer._f12b, fill=INK)
         cur2_y += mm(7)
 
-        textRenderer._text(invoice, d, (rx0 + pad, cur2_y), safe(data.customer.name), font=textRenderer._f11b, fill=INK)
+        textRenderer._text(invoice, (rx0 + pad, cur2_y), safe(data.customer.name), font=textRenderer._f11b, fill=INK)
         cur2_y += mm(5.2)
-        textRenderer._text(invoice, d, (rx0 + pad, cur2_y), safe(data.customer.address), font=textRenderer._f11, fill=INK)
+        textRenderer._text(invoice, (rx0 + pad, cur2_y), safe(data.customer.address), font=textRenderer._f11, fill=INK)
         cur2_y += mm(7)
 
-        textRenderer._text(invoice, d, (rx0 + pad, cur2_y), "IČO", font=textRenderer._f11, fill=INK)
-        textRenderer._text(invoice, d, (rx0 + pad + mm(44), cur2_y), safe(data.customer.register_id), font=textRenderer._f11, fill=INK,
+        textRenderer._text(invoice, (rx0 + pad, cur2_y), "IČO", font=textRenderer._f11, fill=INK)
+        textRenderer._text(invoice, (rx0 + pad + mm(44), cur2_y), safe(data.customer.register_id), font=textRenderer._f11, fill=INK,
                    span_tag=SpanTag.CUSTOMER_REGISTER_ID)
         cur2_y += mm(5.2)
-        textRenderer._text(invoice, d, (rx0 + pad, cur2_y), "DIČ", font=textRenderer._f11, fill=INK)
-        textRenderer._text(invoice, d, (rx0 + pad + mm(44), cur2_y), safe(data.customer.tax_id), font=textRenderer._f11, fill=INK,
+        textRenderer._text(invoice, (rx0 + pad, cur2_y), "DIČ", font=textRenderer._f11, fill=INK)
+        textRenderer._text(invoice, (rx0 + pad + mm(44), cur2_y), safe(data.customer.tax_id), font=textRenderer._f11, fill=INK,
                    span_tag=SpanTag.CUSTOMER_TAX_ID)
         cur2_y += mm(9)
 
@@ -212,8 +209,8 @@ class OreaHotelInvoice(InvoiceTemplate):
 
         def meta_row(label: str, value: str, tag: SpanTag = SpanTag.O) -> None:
             nonlocal cur2_y
-            textRenderer._text(invoice, d, (meta_x_label, cur2_y), label, font=textRenderer._f11, fill=INK)
-            textRenderer._text(invoice, d, (meta_x_val, cur2_y), safe(value), font=textRenderer._f11b, fill=INK,
+            textRenderer._text(invoice, (meta_x_label, cur2_y), label, font=textRenderer._f11, fill=INK)
+            textRenderer._text(invoice, (meta_x_val, cur2_y), safe(value), font=textRenderer._f11b, fill=INK,
                        span_tag=tag)
             cur2_y += mm(5.2)
 
@@ -233,8 +230,8 @@ class OreaHotelInvoice(InvoiceTemplate):
         rect(content_x0, y, content_x1, y + order_h, weight="strong", fill=None)
 
         order_id = safe(getattr(data, "order_number", getattr(data, "booking_id", "")))
-        textRenderer._text(invoice, d, (content_x0 + pad, y + mm(3.5)), "Číslo objednávky:", font=textRenderer._f11, fill=INK)
-        textRenderer._text(invoice, d, (content_x0 + mm(55), y + mm(3.5)), order_id, font=textRenderer._f11, fill=INK,
+        textRenderer._text(invoice, (content_x0 + pad, y + mm(3.5)), "Číslo objednávky:", font=textRenderer._f11, fill=INK)
+        textRenderer._text(invoice, (content_x0 + mm(55), y + mm(3.5)), order_id, font=textRenderer._f11, fill=INK,
                    span_tag=SpanTag.ORDER_NUMBER if hasattr(SpanTag, "ORDER_NUMBER") else SpanTag.O)
 
         y += order_h
@@ -266,11 +263,11 @@ class OreaHotelInvoice(InvoiceTemplate):
         # header text
         for i, h in enumerate(headers):
             if i == 0:
-                textRenderer._text(invoice, d, (xs[i] + mm(2), y + mm(2.2)), h, font=textRenderer._f10b, fill=INK, must_have_same_width=True)
+                textRenderer._text(invoice, (xs[i] + mm(2), y + mm(2.2)), h, font=textRenderer._f10b, fill=INK, must_have_same_width=True)
             elif i in (1, 2, 3, 4):
-                textRenderer._text_center(invoice, d, xs[i] + col_ws[i] / 2, y + mm(2.2), h, textRenderer._f10b, INK, must_have_same_width=True)
+                textRenderer._text_center(invoice, xs[i] + col_ws[i] / 2, y + mm(2.2), h, textRenderer._f10b, INK, must_have_same_width=True)
             else:
-                textRenderer._text_center(invoice, d, xs[i] + col_ws[i] / 2, y + mm(2.2), h, textRenderer._f10b, INK, must_have_same_width=True)
+                textRenderer._text_center(invoice, xs[i] + col_ws[i] / 2, y + mm(2.2), h, textRenderer._f10b, INK, must_have_same_width=True)
 
         y += table_h_head
 
@@ -296,18 +293,18 @@ class OreaHotelInvoice(InvoiceTemplate):
             total = fmt_money(getattr(it, "price_with_vat", getattr(it, "total", 0)))
 
             # draw cells
-            textRenderer._text(invoice, d, (xs[0] + mm(2), y_row_mid), desc, font=textRenderer._f10, fill=INK)
-            textRenderer._text_center(invoice, d, xs[1] + col_ws[1] / 2, y_row_mid, dfrom, textRenderer._f10, INK)
-            textRenderer._text_center(invoice, d, xs[2] + col_ws[2] / 2, y_row_mid, dto, textRenderer._f10, INK)
-            textRenderer._text_center(invoice, d, xs[3] + col_ws[3] / 2, y_row_mid, mj, textRenderer._f10, INK)
-            textRenderer._text_center(invoice, d, xs[4] + col_ws[4] / 2, y_row_mid, f"{vatp}%", textRenderer._f10, INK,
+            textRenderer._text(invoice, (xs[0] + mm(2), y_row_mid), desc, font=textRenderer._f10, fill=INK)
+            textRenderer._text_center(invoice, xs[1] + col_ws[1] / 2, y_row_mid, dfrom, textRenderer._f10, INK)
+            textRenderer._text_center(invoice, xs[2] + col_ws[2] / 2, y_row_mid, dto, textRenderer._f10, INK)
+            textRenderer._text_center(invoice, xs[3] + col_ws[3] / 2, y_row_mid, mj, textRenderer._f10, INK)
+            textRenderer._text_center(invoice, xs[4] + col_ws[4] / 2, y_row_mid, f"{vatp}%", textRenderer._f10, INK,
                               span_tag=SpanTag.O)
 
-            textRenderer._text_right(invoice, d, xs[5] + col_ws[5] - mm(2), y_row_mid, base, textRenderer._f10, INK,
+            textRenderer._text_right(invoice, xs[5] + col_ws[5] - mm(2), y_row_mid, base, textRenderer._f10, INK,
                              span_tag=SpanTag.O)
-            textRenderer._text_right(invoice, d, xs[6] + col_ws[6] - mm(2), y_row_mid, vatv, textRenderer._f10, INK,
+            textRenderer._text_right(invoice, xs[6] + col_ws[6] - mm(2), y_row_mid, vatv, textRenderer._f10, INK,
                              span_tag=SpanTag.O)
-            textRenderer._text_right(invoice, d, xs[7] + col_ws[7] - mm(2), y_row_mid, total, textRenderer._f10, INK)
+            textRenderer._text_right(invoice, xs[7] + col_ws[7] - mm(2), y_row_mid, total, textRenderer._f10, INK)
 
             y += row_h
 
@@ -319,9 +316,8 @@ class OreaHotelInvoice(InvoiceTemplate):
         # =====================================================================
         # Částka celkem – tag TOTAL
         total_val = fmt_money(getattr(data, "calculated_total_price", getattr(data, "total", 0)))
-        textRenderer._text(invoice, d, (content_x0 + int(content_w * 0.62), y), "Celkem s DPH:", font=textRenderer._f14b, fill=INK)
-        textRenderer._text_right(invoice, 
-            d,
+        textRenderer._text(invoice, (content_x0 + int(content_w * 0.62), y), "Celkem s DPH:", font=textRenderer._f14b, fill=INK)
+        textRenderer._text_right(invoice,
             content_x1 - mm(2),
             y,
             f"{total_val}",
@@ -339,36 +335,36 @@ class OreaHotelInvoice(InvoiceTemplate):
         sx0 = content_x0
         sx1 = sx0 + section_w
 
-        textRenderer._text(invoice, d, (sx0, y), "PŘEHLED ÚHRAD", font=textRenderer._f12b, fill=INK)
+        textRenderer._text(invoice, (sx0, y), "PŘEHLED ÚHRAD", font=textRenderer._f12b, fill=INK)
         y += mm(6)
         hline(y, sx0, sx1, "mid")
         y += mm(3)
 
         # malá tabulka: Způsob úhrady | Uhrazeno
         # (pro dataset stačí 1 řádek)
-        textRenderer._text(invoice, d, (sx0 + mm(2), y), "Způsob úhrady", font=textRenderer._f10b, fill=INK)
-        textRenderer._text_right(invoice, d, sx1 - mm(2), y, "Uhrazeno", textRenderer._f10b, INK)
+        textRenderer._text(invoice, (sx0 + mm(2), y), "Způsob úhrady", font=textRenderer._f10b, fill=INK)
+        textRenderer._text_right(invoice, sx1 - mm(2), y, "Uhrazeno", textRenderer._f10b, INK)
         y += mm(4.5)
         hline(y, sx0, sx1, "thin")
         y += mm(2.5)
 
         pay = safe(getattr(data.payment_type, "value", getattr(data, "payment_type", "Kartou")))
-        textRenderer._text(invoice, d, (sx0 + mm(2), y), pay, font=textRenderer._f10, fill=INK, span_tag=SpanTag.PAYMENT_TYPE)
-        textRenderer._text_right(invoice, d, sx1 - mm(2), y, total_val, textRenderer._f10, INK)
+        textRenderer._text(invoice, (sx0 + mm(2), y), pay, font=textRenderer._f10, fill=INK, span_tag=SpanTag.PAYMENT_TYPE)
+        textRenderer._text_right(invoice, sx1 - mm(2), y, total_val, textRenderer._f10, INK)
         y += mm(7)
 
         # =====================================================================
         # REKAPITULACE DPH
         # =====================================================================
-        textRenderer._text(invoice, d, (sx0, y), "REKAPITULACE DPH", font=textRenderer._f12b, fill=INK)
+        textRenderer._text(invoice, (sx0, y), "REKAPITULACE DPH", font=textRenderer._f12b, fill=INK)
         y += mm(6)
         hline(y, sx0, sx1, "mid")
         y += mm(3)
 
         # hlavička
-        textRenderer._text(invoice, d, (sx0 + mm(2), y), "Sazba", font=textRenderer._f10b, fill=INK)
-        textRenderer._text_center(invoice, d, sx0 + section_w * 0.55, y, "Základ DPH", textRenderer._f10b, INK)
-        textRenderer._text_right(invoice, d, sx1 - mm(2), y, "DPH", textRenderer._f10b, INK)
+        textRenderer._text(invoice, (sx0 + mm(2), y), "Sazba", font=textRenderer._f10b, fill=INK)
+        textRenderer._text_center(invoice, sx0 + section_w * 0.55, y, "Základ DPH", textRenderer._f10b, INK)
+        textRenderer._text_right(invoice, sx1 - mm(2), y, "DPH", textRenderer._f10b, INK)
         y += mm(4.5)
         hline(y, sx0, sx1, "thin")
         y += mm(2.5)
@@ -380,13 +376,13 @@ class OreaHotelInvoice(InvoiceTemplate):
             vatv = fmt_money(getattr(v, "vat", 0))
 
             # sazba
-            _, perc_id = textRenderer._text(invoice, d, (sx0 + mm(2), y), f"{perc}%", font=textRenderer._f10, fill=INK,
+            _, perc_id = textRenderer._text(invoice, (sx0 + mm(2), y), f"{perc}%", font=textRenderer._f10, fill=INK,
                                    span_tag=SpanTag.O)
             # základ
-            _, base_id = textRenderer._text_right(invoice, d, sx0 + section_w * 0.78, y, base, textRenderer._f10, INK,
+            _, base_id = textRenderer._text_right(invoice, sx0 + section_w * 0.78, y, base, textRenderer._f10, INK,
                                           span_tag=SpanTag.O)
             # dph
-            _, vat_id = textRenderer._text_right(invoice, d, sx1 - mm(2), y, vatv, textRenderer._f10, INK,
+            _, vat_id = textRenderer._text_right(invoice, sx1 - mm(2), y, vatv, textRenderer._f10, INK,
                                          span_tag=SpanTag.O)
 
             
@@ -395,8 +391,8 @@ class OreaHotelInvoice(InvoiceTemplate):
         # součet řádek
         hline(y, sx0, sx1, "thin")
         y += mm(2.5)
-        textRenderer._text(invoice, d, (sx0 + mm(2), y), "Celkem", font=textRenderer._f10b, fill=INK)
-        textRenderer._text_right(invoice, d, sx1 - mm(2), y, total_val, textRenderer._f10b, INK, span_tag=SpanTag.TOTAL)
+        textRenderer._text(invoice, (sx0 + mm(2), y), "Celkem", font=textRenderer._f10b, fill=INK)
+        textRenderer._text_right(invoice, sx1 - mm(2), y, total_val, textRenderer._f10b, INK, span_tag=SpanTag.TOTAL)
         y += mm(10)
 
         # =====================================================================
@@ -405,8 +401,8 @@ class OreaHotelInvoice(InvoiceTemplate):
         bottom_y = H - margin_b - mm(42)
 
         # podpisy / poznámky vlevo
-        textRenderer._text(invoice, d, (content_x0, bottom_y+mm(10)), "Fakturu vystavil:", font=textRenderer._f10, fill=INK)
-        textRenderer._text(invoice, d, (content_x0, bottom_y + mm(15)), safe(getattr(data, "issuer", "ABROZ (upravil: ABROZ)")), font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (content_x0, bottom_y+mm(10)), "Fakturu vystavil:", font=textRenderer._f10, fill=INK)
+        textRenderer._text(invoice, (content_x0, bottom_y + mm(15)), safe(getattr(data, "issuer", "ABROZ (upravil: ABROZ)")), font=textRenderer._f10, fill=INK)
 
         # box částka k proplacení vpravo dole
         due_box_w = mm(64)
@@ -417,11 +413,10 @@ class OreaHotelInvoice(InvoiceTemplate):
         dby0 = dby1 - due_box_h
         rect(dbx0, dby0, dbx1, dby1, weight="strong", fill=None)
 
-        textRenderer._text_center(invoice, d, (dbx0 + dbx1) / 2, dby0 + mm(4), "Částka k proplacení", textRenderer._f12b, INK)
+        textRenderer._text_center(invoice, (dbx0 + dbx1) / 2, dby0 + mm(4), "Částka k proplacení", textRenderer._f12b, INK)
         # typicky 0,00 pokud uhrazeno; tag můžeš dát TOTAL_DUE pokud ho máš
         due_val = fmt_money(getattr(data, "amount_due", 0))
-        textRenderer._text_center(invoice, 
-            d,
+        textRenderer._text_center(invoice,
             (dbx0 + dbx1) / 2,
             dby0 + mm(12),
             f"{due_val} {data.currency.value if hasattr(data.currency, 'value') else data.currency}",
@@ -432,8 +427,8 @@ class OreaHotelInvoice(InvoiceTemplate):
         # linky "Převzal" / "Dodavatel"
         line_y = H - margin_b - mm(8)
         hline(line_y, content_x0, content_x1, "strong")
-        textRenderer._text(invoice, d, (content_x0, line_y + mm(3)), "Převzal:", font=textRenderer._f10, fill=INK)
-        textRenderer._text_center(invoice, d, (content_x0 + content_x1) / 2, line_y + mm(3), "Dodavatel:", textRenderer._f10, INK)
+        textRenderer._text(invoice, (content_x0, line_y + mm(3)), "Převzal:", font=textRenderer._f10, fill=INK)
+        textRenderer._text_center(invoice, (content_x0 + content_x1) / 2, line_y + mm(3), "Dodavatel:", textRenderer._f10, INK)
 
         # =====================================================================
         # Post-process (scan/noise) + save

@@ -1,9 +1,9 @@
 import json
 import os
 from typing import Any
-from requests import Session
-from common.invoice.Processors.IEProcessors.DonutIEProcessor import DonutIEConfig
-from common.invoice.Processors.IEProcessors.LayoutLMV3IEProcessor import LayoutLMV3IEConfig
+from common.Session import Session
+from common.invoice.processors.IEProcessors.DonutIEProcessor import DonutIEConfig
+from common.invoice.processors.IEProcessors.LayoutLMV3IEProcessor import LayoutLMV3IEConfig
 from common.invoice.OperationResult import OperationResult
 from common.controller.Controller import Controller
 from PIL import Image

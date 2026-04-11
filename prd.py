@@ -59,15 +59,6 @@ ID2LABEL = {
 
     29: "B_TOTAL",
     30: "I_TOTAL",
-    
-    31: "B_VAT_PERCENTAGE",
-    32: "I_VAT_PERCENTAGE",
-    
-    33: "B_VAT_BASE",
-    34: "I_VAT_BASE",
-    
-    35: "B_VAT",
-    36: "I_VAT",
 }
 
 # --- POMOCNÉ FUNKCE ---

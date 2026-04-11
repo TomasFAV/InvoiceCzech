@@ -17,8 +17,7 @@ tags_list = [
     (3,"supp_tax_id"), (4,"cust_register_id"), (5,"cust_tax_id"),
     (6,"issue_date"), (7,"taxable_supply_date"), (8,"due_date"),
     (9,"payment_type"), (10,"bank_account_number"), (11,"iban"),
-    (12,"bic"), (13,"variable_symbol"), (14,"const_symbol"), (15,"total"),
-    (16,"vat_percentage"), (17,"vat_base"), (18,"vat"), 
+    (12,"bic"), (13,"variable_symbol"), (14,"const_symbol"), (15,"total"), 
 ]
 
 # Inline vytvoření id2label
@@ -59,7 +58,7 @@ def run_visualization():
             w, h = img.size
 
             try:
-                font = ImageFont.truetype("arial.ttf", 14)
+                font = ImageFont.truetype("/home/tom-k/Desktop/Zpracovani_faktur/fonts/ARIAL.ttf", 14)
             except:
                 font = ImageFont.load_default()
 

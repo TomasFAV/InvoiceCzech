@@ -14,9 +14,7 @@ class BertModel(TokenClassificationModel):
 
     def predict_labels(self, words: list[str]) -> list[TokenTag]:
         """
-        Vrací pole tagů ve stejném pořadí jako vstupní slova.
-        Každému slovu přiřadí první predikci z jeho prvního výskytu
-        napříč všemi overflow okny.
+        Vrací tagy ve stejném pořadí jako vstupní slova.
         """
 
         encoding = self._processor(
@@ -31,12 +29,14 @@ class BertModel(TokenClassificationModel):
             is_split_into_words=True,
         ).to(self._device)
 
-        # offset_mapping si necháme bokem, model ho nepotřebuje
         offset_mapping = encoding.pop("offset_mapping")
         encoding.pop("overflow_to_sample_mapping", None)
 
-        outputs = self._model(**encoding)
-        all_predictions = outputs.logits.argmax(-1)  # [num_windows, seq_len]
+        with torch.no_grad():
+            outputs = self._model(**encoding)
+
+        all_predictions = outputs.logits.argmax(-1).cpu()
+        offset_mapping = offset_mapping.cpu()
 
         labels: list[TokenTag | None] = [None] * len(words)
 
@@ -45,32 +45,22 @@ class BertModel(TokenClassificationModel):
             word_ids = encoding.word_ids(batch_index=window_idx)
             offsets = offset_mapping[window_idx]
 
-            last_word_idx = None
-
             for token_idx, pred_id in enumerate(predictions_tensor):
-                curr_word_idx = word_ids[token_idx]
+                word_id = word_ids[token_idx]
 
-                # přeskoč speciální tokeny
-                if curr_word_idx is None:
+                if word_id is None:
                     continue
 
-                # přeskoč další subtokeny stejného slova
-                if curr_word_idx == last_word_idx:
-                    continue
-
-                # pojistka: ber jen první subtoken slova
+                # ber jen první subtoken slova
                 if offsets[token_idx][0].item() != 0:
                     continue
 
-                # pokud už jsme slovo vyřešili v předchozím okně, nech ho být
-                if labels[curr_word_idx] is not None:
-                    last_word_idx = curr_word_idx
+                # už vyřešeno v předchozím nebo tomto okně
+                if labels[word_id] is not None:
                     continue
 
-                labels[curr_word_idx] = TokenTag.from_id(pred_id.item())
-                last_word_idx = curr_word_idx
+                labels[word_id] = TokenTag.from_id(pred_id.item())
 
-        # fallback, kdyby nějaké slovo nebylo pokryto
         return [
             label if label is not None else TokenTag.from_id(0)
             for label in labels

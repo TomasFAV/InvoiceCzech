@@ -1,14 +1,14 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from invoices_generator.core.Bank import Bank
-from invoices_generator.core.Company import Company
-from invoices_generator.core.enumerates.CurrencyCode import CurrencyCode
-from invoices_generator.core.InvoiceItem import InvoiceItem
-from invoices_generator.core.VatItem import VatItem
+from common.data.Bank import Bank
+from common.data.Company import Company
+from common.data.enumerates.CurrencyCode import CurrencyCode
+from common.data.InvoiceItem import InvoiceItem
+from common.data.VatItem import VatItem
 from invoices_generator.utility.json_serializable import json_serializable
 
-from invoices_generator.utility.utils import fmt, fmt_money
+from common.utils.utilities import fmt, fmt_money
 
 
 @dataclass

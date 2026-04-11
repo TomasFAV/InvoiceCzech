@@ -6,7 +6,7 @@ from common.interfaces.IMainWindow import IMainWindow
 from common.view.components.Component import Component
 from common.utils.consts import TOKEN_TAG, TOKEN_TEXT_TAG
 from common.view.components.BoundingBoxLayer import DrawBoxConfig, DrawBoxLayer, Drawable
-from common.view.components.Canvas import ImageCanvas
+from common.view.components.ImageCanvas import ImageCanvas
     
 @dataclass
 class ExportInvoiceToolBar:

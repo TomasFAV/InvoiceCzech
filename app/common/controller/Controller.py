@@ -4,9 +4,9 @@ from typing import Any
 from PIL import Image
 from common.invoice.models.Invoice import Invoice
 from common.invoice.models.InvoiceData import InvoiceData
-from common.invoice.Processors.IEProcessors.DonutIEProcessor import DonutIEConfig
-from common.invoice.Processors.InvoiceExporter import InvoiceExporter
-from common.invoice.Processors.InvoiceImporter import InvoiceImporter
+from common.invoice.processors.IEProcessors.DonutIEProcessor import DonutIEConfig
+from common.invoice.processors.InvoiceExporter import InvoiceExporter
+from common.invoice.processors.InvoiceImporter import InvoiceImporter
 from common.invoice.models.GToken import GToken
 from common.invoice.models.GSegment import GSegment
 from common.invoice.models.GSpan import GSpan
