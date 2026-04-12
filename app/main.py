@@ -92,8 +92,6 @@ def parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
-    run_client()
-    
     args = parse_args()
 
     if args.command == "annotator":
