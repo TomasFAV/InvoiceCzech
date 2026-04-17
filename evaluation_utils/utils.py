@@ -601,8 +601,6 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
 
   micro_f1 = cal_f1(preds, answers)
   micro_f1_1 = cal_f1(preds, answers, 0.1)
-  micro_precision = cal_precision(preds, answers)
-  micro_recall = cal_recall(preds, answers)
   micro_ned = cal_ned(preds, answers)
 
   mean_acc = 0.0
@@ -623,7 +621,7 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
     mean_f1 += document_f1
     mean_f1_1 += document_f1_1
     mean_acc += document_acc
-    mean_ned += cal_ned([pred_json], [gt_json])
+    mean_ned += cal_ned([pred_json], [gt_json]) #field level
 
     f1_scores.append(document_f1)
 
@@ -640,5 +638,5 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
   f1_P25 = numpy.percentile(f1_scores, 25)
   f1_P05 = numpy.percentile(f1_scores, 5)
 
-  return {"document_exact_match": document_exact_match, "micro-ned": micro_ned, "micro-recall":  micro_recall, "micro-precision": micro_precision,"micro-f1": micro_f1, "macro-ned":mean_ned, "macro-f1":mean_f1, "macro-f1-dev": f1_standard_deviation,"macro-f1-P50": f1_P50, "macro-f1-P25": f1_P25, "macro-f1-P05": f1_P05, "macro-f1-min": numpy.min(f1_scores),
+  return {"document_exact_match": document_exact_match, "mean-field-NED": micro_ned, "micro-f1": micro_f1, "macro-ned":mean_ned, "macro-f1":mean_f1, "macro-f1-dev": f1_standard_deviation,"macro-f1-P50": f1_P50, "macro-f1-P25": f1_P25, "macro-f1-P05": f1_P05, "macro-f1-min": numpy.min(f1_scores),
           "accuracy": mean_acc, "fuzzy-micro-f1": micro_f1_1, "fuzzy-macro-f1": mean_f1_1}
