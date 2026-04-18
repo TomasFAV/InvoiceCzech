@@ -640,3 +640,191 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
 
   return {"document_exact_match": document_exact_match, "mean-field-NED": micro_ned, "micro-f1": micro_f1, "macro-ned":mean_ned, "macro-f1":mean_f1, "macro-f1-dev": f1_standard_deviation,"macro-f1-P50": f1_P50, "macro-f1-P25": f1_P25, "macro-f1-P05": f1_P05, "macro-f1-min": numpy.min(f1_scores),
           "accuracy": mean_acc, "fuzzy-micro-f1": micro_f1_1, "fuzzy-macro-f1": mean_f1_1}
+
+
+from enum import Enum
+from typing import Any
+
+
+class TokenTag(Enum):
+    O = (0,"o", "O")
+    
+    B_INVOICE_NUMBER = (1,"b_invoice_number", "I_INVOICE_NUMBER")
+    I_INVOICE_NUMBER = (2,"i_invoice_number", "I_INVOICE_NUMBER")
+
+    B_SUPPLIER_REGISTER_ID = (3,"b_supp_register_id", "I_SUPPLIER_REGISTER_ID")
+    I_SUPPLIER_REGISTER_ID = (4,"i_supp_register_id", "I_SUPPLIER_REGISTER_ID")
+    
+    B_SUPPLIER_TAX_ID = (5,"b_supp_tax_id", "I_SUPPLIER_TAX_ID")
+    I_SUPPLIER_TAX_ID = (6,"i_supp_tax_id", "I_SUPPLIER_TAX_ID")
+    
+    B_CUSTOMER_REGISTER_ID = (7,"b_cust_register_id", "I_CUSTOMER_REGISTER_ID")
+    I_CUSTOMER_REGISTER_ID = (8,"i_cust_register_id", "I_CUSTOMER_REGISTER_ID")
+    
+    B_CUSTOMER_TAX_ID = (9,"b_cust_tax_id", "I_CUSTOMER_TAX_ID")
+    I_CUSTOMER_TAX_ID = (10,"i_cust_tax_id", "I_CUSTOMER_TAX_ID") 
+    
+    B_ISSUE_DATE = (11,"b_issue_date", "I_ISSUE_DATE")
+    I_ISSUE_DATE = (12,"i_issue_date", "I_ISSUE_DATE")
+    
+    B_TAXABLE_SUPPLY_DATE = (13,"b_taxable_supply_date", "I_TAXABLE_SUPPLY_DATE")
+    I_TAXABLE_SUPPLY_DATE = (14,"i_taxable_supply_date", "I_TAXABLE_SUPPLY_DATE")
+    
+    B_DUE_DATE = (15,"b_due_date", "I_DUE_DATE")
+    I_DUE_DATE = (16,"i_due_date", "I_DUE_DATE")
+    
+    B_PAYMENT_TYPE = (17,"b_payment_type", "I_PAYMENT_TYPE")
+    I_PAYMENT_TYPE = (18,"i_payment_type", "I_PAYMENT_TYPE")
+    
+    B_BANK_ACCOUNT_NUMBER = (19,"b_bank_account_number", "I_BANK_ACCOUNT_NUMBER")
+    I_BANK_ACCOUNT_NUMBER = (20,"i_bank_account_number", "I_BANK_ACCOUNT_NUMBER")
+    
+    B_IBAN = (21,"b_iban", "I_IBAN")
+    I_IBAN = (22,"i_iban", "I_IBAN")
+    
+    B_BIC = (23,"b_bic", "I_BIC")
+    I_BIC = (24,"i_bic", "I_BIC")
+    
+    B_VARIABLE_SYMBOL = (25,"b_variable_symbol", "I_VARIABLE_SYMBOL")
+    I_VARIABLE_SYMBOL = (26,"i_variable_symbol", "I_VARIABLE_SYMBOL")
+    
+    B_CONST_SYMBOL = (27,"b_const_symbol", "I_CONST_SYMBOL")
+    I_CONST_SYMBOL = (28,"i_const_symbol", "I_CONST_SYMBOL")
+    
+    B_TOTAL = (29,"b_total", "I_TOTAL")
+    I_TOTAL = (30,"i_total", "I_TOTAL")
+
+
+
+    #B_VAT_PERCENTAGE = (31,"b_vat_percentage", "I_VAT_PERCENTAGE")
+    #I_VAT_PERCENTAGE = (32,"i_vat_percentage", "I_VAT_PERCENTAGE")
+    
+    #B_VAT_BASE = (33,"b_vat_base", "I_VAT_BASE")
+    #I_VAT_BASE = (34,"i_vat_base", "I_VAT_BASE")
+    
+    #B_VAT = (35,"b_vat", "I_VAT")
+    #I_VAT = (36,"i_vat", "I_VAT")
+
+
+
+
+
+    def __init__(self, code:int, text:str, ref:str):
+        super().__init__()
+
+        self.code = code
+        self.text = text
+        self._ref = ref
+
+    @property
+    def ref(self)->Any:
+        return TokenTag[self._ref] if isinstance(self._ref, str) else self._ref
+
+    @classmethod
+    def from_id(cls, tag_id):
+        for tag in cls:
+            if tag.value[0] == tag_id:
+                return tag
+        return cls.O  # Nebo None, pokud ID neexistuje
+
+
+    def __str__(self):
+        return self.text
+
+TOKEN_TAGS_TO_IGNORE = []
+
+class SpanTag(Enum):
+    O = (0,"o", TokenTag.O)
+    INVOICE_NUMBER = (1,"invoice_number", TokenTag.B_INVOICE_NUMBER)
+    SUPPLIER_REGISTER_ID = (2,"supp_register_id", TokenTag.B_SUPPLIER_REGISTER_ID)
+    SUPPLIER_TAX_ID = (3,"supp_tax_id", TokenTag.B_SUPPLIER_TAX_ID)
+    CUSTOMER_REGISTER_ID = (4,"cust_register_id", TokenTag.B_CUSTOMER_REGISTER_ID)
+    CUSTOMER_TAX_ID = (5,"cust_tax_id", TokenTag.B_CUSTOMER_TAX_ID)
+    ISSUE_DATE = (6,"issue_date", TokenTag.B_ISSUE_DATE)
+    TAXABLE_SUPPLY_DATE = (7,"taxable_supply_date", TokenTag.B_TAXABLE_SUPPLY_DATE)
+    DUE_DATE = (8,"due_date", TokenTag.B_DUE_DATE)
+    PAYMENT_TYPE = (9,"payment_type", TokenTag.B_PAYMENT_TYPE)
+    BANK_ACCOUNT_NUMBER = (10,"bank_account_number", TokenTag.B_BANK_ACCOUNT_NUMBER)
+    IBAN = (11,"iban", TokenTag.B_IBAN)
+    BIC = (12,"bic", TokenTag.B_BIC)
+    VARIABLE_SYMBOL = (13,"variable_symbol", TokenTag.B_VARIABLE_SYMBOL)
+    CONST_SYMBOL = (14,"const_symbol", TokenTag.B_CONST_SYMBOL)
+    TOTAL = (15,"total", TokenTag.B_TOTAL)
+
+    #do budoucna v pripade rozsireni prace
+    #VAT_PERCENTAGE = (16,"vat_percentage", TokenTag.B_VAT_PERCENTAGE)
+    #VAT_BASE = (17,"vat_base", TokenTag.B_VAT_BASE)
+    #VAT = (18,"vat", TokenTag.B_VAT)
+    
+
+    def __init__(self, code:int, text:str, ref:TokenTag):
+        super().__init__()
+
+        self.code = code
+        self.text = text
+        self.ref = ref
+
+    @classmethod
+    def from_id(cls, tag_id):
+        for tag in cls:
+            if tag.value[0] == tag_id:
+                return tag
+        return cls.O  # Nebo None, pokud ID neexistuje
+    
+    @classmethod
+    def from__token_id(cls, tag_id):
+        if tag_id == 0:
+            return cls.O
+        
+        # Pokud je tag_id sudé (I-tag), převedeme ho na liché (B-tag)
+        # B-tagy jsou: 1, 3, 5... | I-tagy jsou: 2, 4, 6...
+        base_id = tag_id if tag_id % 2 != 0 else tag_id - 1
+        
+        for tag in cls:
+            # tag.value[2] je token_tags objekt, který má atribut .code
+            if tag.value[2].code == base_id:
+                return tag
+                
+        return cls.O
+
+    def __str__(self):
+        return self.text
+
+SPAN_TAGS_TO_IGNORE = []
+
+def __insert_curent_span_into_dict(current_label:str, current_span_words: list[str], dictionary: dict[str, str]):
+        key = normalize_text(current_label)
+        if key == "payment_type":
+            dictionary[key] = " ".join(current_span_words).strip()
+        else:
+            dictionary[key] = "".join(current_span_words).strip()
+
+def labels_to_json(words, labels):
+        pred_dict:dict[str, str] = defaultdict(str)
+        for span_tag in SpanTag:
+            if (span_tag != SpanTag.O):
+                pred_dict[span_tag.text] = ""
+
+        current_entity_words = []
+        current_label = None
+
+        for word, label in zip(words, labels):
+            label = label.text
+
+            if label.startswith("b_"):
+                    if current_label and current_entity_words:
+                        __insert_curent_span_into_dict(current_label, current_entity_words, pred_dict)
+                    current_label = label[2:]
+                    current_entity_words = [word]
+            elif label.startswith("i_") and current_label == label[2:]:
+                current_entity_words.append(word)
+            else:
+                if current_label and current_entity_words:
+                    __insert_curent_span_into_dict(current_label, current_entity_words, pred_dict)
+                current_label = None
+                current_entity_words = []
+
+        if current_label and current_entity_words:
+            __insert_curent_span_into_dict(current_label, current_entity_words, pred_dict)
+
+        return pred_dict
