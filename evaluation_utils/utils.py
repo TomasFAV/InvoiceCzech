@@ -447,13 +447,13 @@ def plot_field_level(field_accuracy: dict, title:str = "Field-level Accuracy", x
 ##########################################METRIKY###############################################
 
 #zkopírováno z repozitáře clovai/donut
-def cal_f1(self, preds: List[dict], answers: List[dict]):
+def cal_f1(preds: List[dict], answers: List[dict]):
         """
         Calculate global F1 accuracy score (field-level, micro-averaged) by counting all true positives, false negatives and false positives
         """
         total_tp, total_fn_or_fp = 0, 0
         for pred, answer in zip(preds, answers):
-            pred, answer = self.flatten(self.normalize_dict(pred)), self.flatten(self.normalize_dict(answer))
+            pred, answer = flatten(normalize_dict(pred, True)), flatten(normalize_dict(answer))
             for field in pred:
                 if field in answer:
                     total_tp += 1
@@ -466,7 +466,7 @@ def cal_f1(self, preds: List[dict], answers: List[dict]):
 
 from collections import defaultdict
 
-def field_level_accuracy(preds: List[dict], answers: List[dict]):
+def field_level_recall(preds: List[dict], answers: List[dict]):
         """
         Calculate global F1 accuracy score (field-level, micro-averaged) by counting all true positives, false negatives and false positives
         """
@@ -493,39 +493,36 @@ def field_level_accuracy(preds: List[dict], answers: List[dict]):
 
         return field_accuracy, field_errors
 
-def field_level_recal(preds: List[dict], answers: List[dict]):
-        """
-        Calculate global F1 accuracy score (field-level, micro-averaged) by counting all true positives, false negatives and false positives
-        """
-        field_accuracy = defaultdict(lambda: (0.0, 0.0))
-        field_errors = defaultdict(list) #obsahuje list dvojic predikce, ground_truth
+def field_level_slot_accuracy(preds: List[dict], answers: List[dict]):
+    field_accuracy = defaultdict(lambda: [0.0, 0.0])  # correct, total_docs
+    field_errors = defaultdict(list)
 
+    field_names = [span_tag.text for span_tag in SpanTag if span_tag != SpanTag.O]
+
+    for pred, answer in zip(preds, answers):
         ground_truth = defaultdict(str)
 
-        for span_tag in SpanTag:
-            if (span_tag != SpanTag.O):
-                ground_truth[span_tag.text] = ""
+        for key in field_names:
+            ground_truth[key] = ""
 
-        for key, value in answers.items():
+        for key, value in answer.items():
             ground_truth[key] = value
 
-        for pred, answer in zip(preds, ground_truth):
-            pred, answer = flatten(normalize_dict(pred, True)), flatten(normalize_dict(answer))
-            for answ_field in answer:
-                key:str = answ_field[0]
+        pred_dict = normalize_dict(pred, True)
+        gt_dict = normalize_dict(ground_truth)
 
-                if answ_field in pred:
-                    field_accuracy[key] = (field_accuracy[key][0]+1, field_accuracy[key][1]+1)
-                else:
-                    field_accuracy[key] = (field_accuracy[key][0], field_accuracy[key][1]+1)
+        for key in field_names:
+            pred_val = pred_dict.get(key, "")
+            gt_val = gt_dict.get(key, "")
 
-                    for pred_field in pred:
-                        if(pred_field[0] == key):
+            field_accuracy[key][1] += 1
 
-                            field_errors[key].append((pred_field[1], answ_field[1]))
+            if pred_val == gt_val:
+                field_accuracy[key][0] += 1
+            else:
+                field_errors[key].append((pred_val, gt_val))
 
-
-        return field_accuracy, field_errors
+    return field_accuracy, field_errors
 
 #zkopírováno z repozitáře clovai/donut
 def cal_acc(pred: dict, answer: dict):
@@ -598,26 +595,22 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
   answers = normalize_dict(answers, False)
 
   micro_f1 = cal_f1(preds, answers)
-  micro_f1_1 = cal_f1(preds, answers, 0.1)
   micro_ned = cal_ned(preds, answers)
 
   mean_acc = 0.0
   mean_f1 = 0.0 
-  mean_f1_1 = 0.0
   mean_ned = 0.0
 
   f1_standard_deviation = 0.0
 
   for pred_json, gt_json in zip(preds, answers):
     document_f1 = cal_f1([pred_json], [gt_json])
-    document_f1_1 = cal_f1([pred_json], [gt_json], 0.1)
     if(document_f1 == 1):
       document_exact_match += 1
 
     document_acc = cal_acc(pred_json, gt_json)
 
     mean_f1 += document_f1
-    mean_f1_1 += document_f1_1
     mean_acc += document_acc
     mean_ned += cal_ned([pred_json], [gt_json]) #field level
 
@@ -625,7 +618,6 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
 
 
   mean_f1 = mean_f1/len(preds)
-  mean_f1_1 = mean_f1_1/len(preds)
   mean_acc = mean_acc/len(preds)
   mean_ned = mean_ned/len(preds)
   document_exact_match = document_exact_match/len(preds)
@@ -638,7 +630,7 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
 
   return {"micro F1": micro_f1, "macro F1": mean_f1, "macro F1 min": numpy.min(f1_scores), "macro-f1-dev": f1_standard_deviation,
           "macro-f1-P50": f1_P50, "macro-f1-P25": f1_P25, "macro-f1-P05": f1_P05, "accuracy": mean_acc, "document_exact_match": document_exact_match,
-          "fuzzy-micro-f1": micro_f1_1, "fuzzy-macro-f1": mean_f1_1, "mean-field-NED": micro_ned,"macro-ned":mean_ned}
+          "mean-field-NED": micro_ned,"macro-ned":mean_ned}
 
 
 from enum import Enum
