@@ -1,3 +1,4 @@
+from unittest import defaultTestLoader
 from PIL import Image
 from zss import Node
 import zss
@@ -415,7 +416,7 @@ def construct_tree_from_dict(data: Union[Dict, List], node_name: str = None):
 import matplotlib.pyplot as plt
 import numpy as np
 
-def plot_field_level_f1(field_accuracy: dict):
+def plot_field_level(field_accuracy: dict, title:str = "Field-level Accuracy", xlabel:str = "Accuracy"):
     # připrav data
     data = [
         (field, correct / total, total)
@@ -437,8 +438,8 @@ def plot_field_level_f1(field_accuracy: dict):
     plt.xticks(np.arange(0, 1.1, 0.1))
     plt.grid(axis="x", linestyle="--", alpha=0.5)
 
-    plt.xlabel("Accuracy")
-    plt.title("Field-level Accuracy")
+    plt.xlabel(xlabel)
+    plt.title(title)
 
     plt.tight_layout()
     plt.show()
@@ -446,36 +447,69 @@ def plot_field_level_f1(field_accuracy: dict):
 ##########################################METRIKY###############################################
 
 #zkopírováno z repozitáře clovai/donut
-def cal_f1(preds: List[dict], answers: List[dict], max_ned:float = 0.0):
+def cal_f1(self, preds: List[dict], answers: List[dict]):
         """
         Calculate global F1 accuracy score (field-level, micro-averaged) by counting all true positives, false negatives and false positives
         """
         total_tp, total_fn_or_fp = 0, 0
         for pred, answer in zip(preds, answers):
-            pred, answer = flatten(normalize_dict(pred, True)), flatten(normalize_dict(answer))
-            for pred_field in pred:
-                total_fn_or_fp += 1 #pro případ, když nenajdu hodnotu v ground-truth
-                for answ_field in answer:
-                    if(answ_field[0] == pred_field[0] and ned(pred_field[1], answ_field[1]) <= max_ned):
-                        total_tp += 1
-                        total_fn_or_fp -= 1 #našel jsem v gt takže musím vrátit zpět
-                        answer.remove(answ_field)
-                        break
-
+            pred, answer = self.flatten(self.normalize_dict(pred)), self.flatten(self.normalize_dict(answer))
+            for field in pred:
+                if field in answer:
+                    total_tp += 1
+                    answer.remove(field)
+                else:
+                    total_fn_or_fp += 1
             total_fn_or_fp += len(answer)
         return total_tp / (total_tp + total_fn_or_fp / 2)
 
 
 from collections import defaultdict
 
-def field_level_f1(preds: List[dict], answers: List[dict]):
+def field_level_accuracy(preds: List[dict], answers: List[dict]):
+        """
+        Calculate global F1 accuracy score (field-level, micro-averaged) by counting all true positives, false negatives and false positives
+        """
+
+
+        field_accuracy = defaultdict(lambda: (0.0, 0.0))
+        field_errors = defaultdict(list) #obsahuje list dvojic predikce, ground_truth
+
+        for pred, answer in zip(preds, answers):
+            pred, answer = flatten(normalize_dict(pred, True)), flatten(normalize_dict(answer))
+            for answ_field in answer:
+                key:str = answ_field[0]
+
+                if answ_field in pred:
+                    field_accuracy[key] = (field_accuracy[key][0]+1, field_accuracy[key][1]+1)
+                else:
+                    field_accuracy[key] = (field_accuracy[key][0], field_accuracy[key][1]+1)
+
+                    for pred_field in pred:
+                        if(pred_field[0] == key):
+
+                            field_errors[key].append((pred_field[1], answ_field[1]))
+
+
+        return field_accuracy, field_errors
+
+def field_level_recal(preds: List[dict], answers: List[dict]):
         """
         Calculate global F1 accuracy score (field-level, micro-averaged) by counting all true positives, false negatives and false positives
         """
         field_accuracy = defaultdict(lambda: (0.0, 0.0))
         field_errors = defaultdict(list) #obsahuje list dvojic predikce, ground_truth
 
-        for pred, answer in zip(preds, answers):
+        ground_truth = defaultdict(str)
+
+        for span_tag in SpanTag:
+            if (span_tag != SpanTag.O):
+                ground_truth[span_tag.text] = ""
+
+        for key, value in answers.items():
+            ground_truth[key] = value
+
+        for pred, answer in zip(preds, ground_truth):
             pred, answer = flatten(normalize_dict(pred, True)), flatten(normalize_dict(answer))
             for answ_field in answer:
                 key:str = answ_field[0]
@@ -528,42 +562,6 @@ def cal_acc(pred: dict, answer: dict):
                 )
             ),
         )
-
-
-def cal_precision(preds: List[dict], answers: List[dict]):
-        """
-        Calculate global precision score (field-level, micro-averaged) by counting all true positives, false negatives and false positives
-        """
-        total_tp, total_fn, total_fp = 0, 0, 0
-        for pred, answer in zip(preds, answers):
-            pred, answer = flatten(normalize_dict(pred, True)), flatten(normalize_dict(answer))
-            for field in pred:
-                if field in answer:
-                    total_tp += 1
-                    answer.remove(field)
-                else:
-                  total_fp += 1
-
-
-            total_fn += len(answer)
-        return total_tp / (total_tp + total_fp) if (total_tp + total_fp) > 0 else 1.0
-
-
-def cal_recall(preds: List[dict], answers: List[dict]):
-    total_tp, total_fn = 0, 0
-
-    for pred, answer in zip(preds, answers):
-        pred = flatten(normalize_dict(pred, True))
-        answer = flatten(normalize_dict(answer))
-
-        for field in pred:
-            if field in answer:
-                total_tp += 1
-                answer.remove(field)
-
-        total_fn += len(answer)
-
-    return total_tp / (total_tp + total_fn) if (total_tp + total_fn) > 0 else 1.0
 
 def cal_ned(preds: List[dict], answers: List[dict]):
     ned_val = 0.0
@@ -801,9 +799,6 @@ def __insert_curent_span_into_dict(current_label:str, current_span_words: list[s
 
 def labels_to_json(words, labels):
         pred_dict:dict[str, str] = defaultdict(str)
-        for span_tag in SpanTag:
-            if (span_tag != SpanTag.O):
-                pred_dict[span_tag.text] = ""
 
         current_entity_words = []
         current_label = None
