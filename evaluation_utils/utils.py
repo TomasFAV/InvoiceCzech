@@ -599,8 +599,6 @@ def compute_metrics(preds: List[dict], answers: List[dict], file_names: List[str
 
   documents_f1s = [{
         "file_name": file_names[idx],
-        "pred": preds[idx],
-        "answer": answers[idx],
         "f1": f1,
     } for idx, f1  in enumerate(f1_scores)]
   
