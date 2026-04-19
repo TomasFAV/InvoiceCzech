@@ -636,15 +636,16 @@ def compute_metrics(preds: List[dict], answers: List[dict], file_names: List[str
   f1_P25 = numpy.percentile(f1_scores, 25)
   f1_P05 = numpy.percentile(f1_scores, 5)
 
+  
   average_extractions = sorted(
         documents_f1s,
-        key=lambda x: abs(x[3] - f1_P50)
-    )[:3]
+        key=lambda x: abs(x["f1"] - f1_P50)
+    )[:min(3, len(documents_f1s))]
 
   return {"micro F1": micro_f1, "macro F1": mean_f1, "macro F1 min": numpy.min(f1_scores), "macro-f1-dev": f1_standard_deviation,
           "macro-f1-P50": f1_P50, "macro-f1-P25": f1_P25, "macro-f1-P05": f1_P05, "accuracy": mean_acc, "document_exact_match": document_exact_match,
-          "mean-field-NED": micro_ned,"macro-ned":mean_ned, "best_extractions": documents_f1s[:3],
-          "average_extractions": average_extractions, "worst_extractions": documents_f1s[-3:]}
+          "mean-field-NED": micro_ned,"macro-ned":mean_ned, "worst_extractions": documents_f1s[:min(3, len(documents_f1s))],
+          "average_extractions": average_extractions, "best_extractions": documents_f1s[:(min(3, len(documents_f1s)))]}
 
 
 from enum import Enum
