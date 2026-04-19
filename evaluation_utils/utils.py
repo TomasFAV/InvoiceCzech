@@ -4,40 +4,21 @@ from zss import Node
 import zss
 from nltk import edit_distance
 import pytesseract
-
+from pytesseract import Output
 
 ########################pomocné metody pro evaluaci v google collab#############################
 
-def get_ocr_data_for_layoutlm(image: Image.Image, lang: str = "ces"):
+def get_ocr_data_for_layoutlm(image: Image.Image, lang: str = "ces", min_confidence:int = 30):
     """
     Provede OCR a vrátí data připravená pro processor.feature_extractor (LayoutLMv3).
     """
-    ocr_df = pytesseract.image_to_data(image, lang=lang, output_type=pytesseract.Output.DICT)
+    data = pytesseract.image_to_data(image, lang=lang, output_type=Output.DICT)
+        
+    bbox = [((int)(l),(int)(t),(int)((l+w)),(int)((t+h)))  for l,t,w,h,c in zip(data["left"], data["top"], data["width"], data["height"], data["conf"]) if c != -1 and c > min_confidence]
+    bbox_norm = [((int)(1000*((float)(l)/image.width)),(int)(1000*((float)(t)/image.height)),(int)(1000*((float)(l+w)/image.width)),(int)(1000*((float)(t+h)/image.height)))  for l,t,w,h,c in zip(data["left"], data["top"], data["width"], data["height"], data["conf"]) if c != -1 and c > min_confidence]
+    text = [t  for t,c in zip(data["text"], data["conf"]) if c != -1 and c > min_confidence]
 
-    words = []
-    boxes = []
-    width, height = image.size
-
-    for i in range(len(ocr_df["text"])):
-        # Filtrujeme prázdné řetězce a whitespace
-        word = ocr_df["text"][i].strip()
-        if word != "":
-            words.append(word)
-
-            # Tesseract dává: left, top, width, height
-            x, y, w, h = ocr_df["left"][i], ocr_df["top"][i], ocr_df["width"][i], ocr_df["height"][i]
-
-            # Normalizace na rozsah 0-1000 pro LayoutLMv3
-            # x1, y1 (vlevo nahoře), x2, y2 (vpravo dole)
-            normalized_box = [
-                int(1000 * (x / width)),
-                int(1000 * (y / height)),
-                int(1000 * ((x + w) / width)),
-                int(1000 * ((y + h) / height))
-            ]
-            boxes.append(normalized_box)
-
-    return words, boxes
+    return text, bbox_norm
 
 
 import re
