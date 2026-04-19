@@ -586,7 +586,7 @@ def cal_ned(preds: List[dict], answers: List[dict]):
 
 import numpy
 
-def compute_metrics(preds: List[dict], answers: List[dict]):
+def compute_metrics(preds: List[dict], answers: List[dict], file_names: List[str]):
   document_exact_match = 0
 
   f1_scores = list()
@@ -616,6 +616,14 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
 
     f1_scores.append(document_f1)
 
+  documents_f1s = [{
+        "file_name": file_names[idx],
+        "pred": preds[idx],
+        "answer": answers[idx],
+        "f1": f1,
+    } for idx, f1  in enumerate(f1_scores)]
+  
+  documents_f1s.sort(key=lambda x: x["f1"])
 
   mean_f1 = mean_f1/len(preds)
   mean_acc = mean_acc/len(preds)
@@ -628,9 +636,15 @@ def compute_metrics(preds: List[dict], answers: List[dict]):
   f1_P25 = numpy.percentile(f1_scores, 25)
   f1_P05 = numpy.percentile(f1_scores, 5)
 
+  average_extractions = sorted(
+        documents_f1s,
+        key=lambda x: abs(x[3] - f1_P50)
+    )[:3]
+
   return {"micro F1": micro_f1, "macro F1": mean_f1, "macro F1 min": numpy.min(f1_scores), "macro-f1-dev": f1_standard_deviation,
           "macro-f1-P50": f1_P50, "macro-f1-P25": f1_P25, "macro-f1-P05": f1_P05, "accuracy": mean_acc, "document_exact_match": document_exact_match,
-          "mean-field-NED": micro_ned,"macro-ned":mean_ned}
+          "mean-field-NED": micro_ned,"macro-ned":mean_ned, "best_extractions": documents_f1s[:3],
+          "average_extractions": average_extractions, "worst_extractions": documents_f1s[-3:]}
 
 
 from enum import Enum
