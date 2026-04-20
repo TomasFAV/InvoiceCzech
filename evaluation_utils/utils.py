@@ -12,26 +12,32 @@ def get_ocr_data_for_layoutlm(image: Image.Image, lang: str = "ces", min_confide
     """
     Provede OCR a vrátí data připravená pro processor.feature_extractor (LayoutLMv3).
     """
-    data = pytesseract.image_to_data(image, lang=lang, output_type=Output.DICT)
+    ocr_df = pytesseract.image_to_data(image, lang=lang, output_type=pytesseract.Output.DICT)
 
-    bboxs = []
-    bboxs_norm = []
     words = []
+    boxes = []
+    width, height = image.size
 
-    for i in range(len(data["text"])):
-        word = data["text"][i].strip()
-        conf = data["conf"][i]
-        
-        if word == "" or conf < min_confidence:
-            continue
+    for i in range(len(ocr_df["text"])):
+        # Filtrujeme prázdné řetězce a whitespace
+        word = ocr_df["text"][i].strip()
+        if word != "":
+            words.append(word)
 
-        l, t, w, h = data["left"][i], data["top"][i], data["width"][i], data["height"][i]
+            # Tesseract dává: left, top, width, height
+            x, y, w, h = ocr_df["left"][i], ocr_df["top"][i], ocr_df["width"][i], ocr_df["height"][i]
 
-        bboxs.append(((int)(l),(int)(t),(int)((l+w)),(int)((t+h))))
-        bboxs_norm.append(((int)(1000*((float)(l)/image.width)),(int)(1000*((float)(t)/image.height)),(int)(1000*((float)(l+w)/image.width)),(int)(1000*((float)(t+h)/image.height))))
-        words.append(word)
+            # Normalizace na rozsah 0-1000 pro LayoutLMv3
+            # x1, y1 (vlevo nahoře), x2, y2 (vpravo dole)
+            normalized_box = [
+                int(1000 * (x / width)),
+                int(1000 * (y / height)),
+                int(1000 * ((x + w) / width)),
+                int(1000 * ((y + h) / height))
+            ]
+            boxes.append(normalized_box)
 
-    return words, bboxs_norm
+    return words, boxes
 
 
 import re
