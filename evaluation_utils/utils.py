@@ -13,12 +13,25 @@ def get_ocr_data_for_layoutlm(image: Image.Image, lang: str = "ces", min_confide
     Provede OCR a vrátí data připravená pro processor.feature_extractor (LayoutLMv3).
     """
     data = pytesseract.image_to_data(image, lang=lang, output_type=Output.DICT)
-        
-    bbox = [((int)(l),(int)(t),(int)((l+w)),(int)((t+h)))  for l,t,w,h,c in zip(data["left"], data["top"], data["width"], data["height"], data["conf"]) if c != -1 and c > min_confidence]
-    bbox_norm = [((int)(1000*((float)(l)/image.width)),(int)(1000*((float)(t)/image.height)),(int)(1000*((float)(l+w)/image.width)),(int)(1000*((float)(t+h)/image.height)))  for l,t,w,h,c in zip(data["left"], data["top"], data["width"], data["height"], data["conf"]) if c != -1 and c > min_confidence]
-    text = [t  for t,c in zip(data["text"], data["conf"]) if c != -1 and c > min_confidence]
 
-    return text, bbox_norm
+    bboxs = []
+    bboxs_norm = []
+    words = []
+
+    for i in range(len(data["text"])):
+        word = data["text"][i].strip()
+        conf = data["conf"][i]
+        
+        if word == "" or conf < min_confidence:
+            continue
+
+        l, t, w, h = data["left"][i], data["top"][i], data["width"][i], data["height"][i]
+
+        bboxs.append(((int)(l),(int)(t),(int)((l+w)),(int)((t+h))))
+        bboxs_norm.append(((int)(1000*((float)(l)/image.width)),(int)(1000*((float)(t)/image.height)),(int)(1000*((float)(l+w)/image.width)),(int)(1000*((float)(t+h)/image.height))))
+        words.append(word)
+
+    return words, bboxs_norm
 
 
 import re

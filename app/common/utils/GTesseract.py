@@ -74,19 +74,26 @@ class GTesseract:
 
     def extract_text(self, img_path:Path, min_confidence:int = 30) -> tuple[list[str], list[tuple[int, int, int, int]], list[tuple[int, int, int, int]]]:               
         image = Image.open(img_path)
-        data = pytesseract.image_to_data(image, lang=self.config.language, output_type=Output.DICT)
-        
-        bbox = [((int)(l),(int)(t),(int)((l+w)),(int)((t+h)))  for l,t,w,h,c in zip(data["left"], data["top"], data["width"], data["height"], data["conf"]) if c != -1 and c > min_confidence]
-        bbox_norm = [((int)(1000*((float)(l)/image.width)),(int)(1000*((float)(t)/image.height)),(int)(1000*((float)(l+w)/image.width)),(int)(1000*((float)(t+h)/image.height)))  for l,t,w,h,c in zip(data["left"], data["top"], data["width"], data["height"], data["conf"]) if c != -1 and c > min_confidence]
-        text = [t  for t,c in zip(data["text"], data["conf"]) if c != -1 and c > min_confidence]
-
-        return text, bbox, bbox_norm
+        return self.extract_text_from_image(image, min_confidence)
     
     def extract_text_from_image(self, image:Image.Image, min_confidence:int = 30) -> tuple[list[str], list[tuple[int, int, int, int]], list[tuple[int, int, int, int]]]:               
         data = pytesseract.image_to_data(image, lang=self.config.language, output_type=Output.DICT)
-        
-        bbox = [((int)(l),(int)(t),(int)((l+w)),(int)((t+h)))  for l,t,w,h,c in zip(data["left"], data["top"], data["width"], data["height"], data["conf"]) if c != -1 and c > min_confidence]
-        bbox_norm = [((int)(1000*((float)(l)/image.width)),(int)(1000*((float)(t)/image.height)),(int)(1000*((float)(l+w)/image.width)),(int)(1000*((float)(t+h)/image.height)))  for l,t,w,h,c in zip(data["left"], data["top"], data["width"], data["height"], data["conf"]) if c != -1 and c > min_confidence]
-        text = [t  for t,c in zip(data["text"], data["conf"]) if c != -1 and c > min_confidence]
 
-        return text, bbox, bbox_norm
+        bboxs = []
+        bboxs_norm = []
+        words = []
+
+        for i in range(len(data["text"])):
+            word = data["text"][i].strip()
+            conf = data["conf"][i]
+            
+            if word == "" or conf < min_confidence:
+                continue
+
+            l, t, w, h = data["left"][i], data["top"][i], data["width"][i], data["height"][i]
+
+            bboxs.append(((int)(l),(int)(t),(int)((l+w)),(int)((t+h))))
+            bboxs_norm.append(((int)(1000*((float)(l)/image.width)),(int)(1000*((float)(t)/image.height)),(int)(1000*((float)(l+w)/image.width)),(int)(1000*((float)(t+h)/image.height))))
+            words.append(word)
+
+        return words, bboxs, bboxs_norm
