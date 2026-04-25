@@ -2,45 +2,59 @@
 
 **Metody extrakce informací z českých faktur – bakalářský projekt**
 
-Projekt se zaměřuje na automatickou extrakci strukturovaných dat z faktur pomocí moderních NLP a multimodálních modelů, s důrazem na **lokální běh bez závislosti na cloudových službách**.
+Projekt se zaměřuje na automatickou extrakci strukturovaných dat z faktur s důrazem na **lokálně provozovatelné řešení bez závislosti na externích cloudových službách**. Součástí je návrh a tvorba datasetu českých faktur a experimentální porovnání různých přístupů ke zpracování dokumentů.
 
 ---
 
-## Co projekt umí
+## Přehled projektu
 
-- Načíst obrázek faktury (PNG)
-- Extrahovat klíčové informace pomocí AI modelů
-- Porovnat různé přístupy: NER modely (BERT), layout-aware modely (LiLT, LayoutLMv3), end-to-end model (Donut)
-- Exportovat výsledek do JSON
-- Generovat syntetické faktury
-- Ručně anotovat data pomocí GUI nástroje
-- Augmentovat reálné faktury syntetickými daty
+Projekt pokrývá celý proces zpracování faktur:
+
+- generování syntetických dat
+- augmentaci reálných dokumentů
+- ruční anotaci faktur
+- trénování modelů pro extrakci informací
+- inferenci a vizualizaci výsledků
+
+Podporovány jsou tři hlavní přístupy:
+- klasické NER modely nad OCR výstupem
+- layout-aware modely využívající prostorové informace
+- end-to-end multimodální model generující strukturovaný výstup
 
 ---
 
 ## Použité modely
 
-| Model      | Typ přístupu                        |
-|------------|-------------------------------------|
-| BERT       | klasický NER (text only)            |
-| LiLT       | layout-aware (text + bbox)          |
-| LayoutLMv3 | multimodální (text + obraz)         |
-| Donut      | end-to-end (bez OCR)                |
+| Model        | Typ přístupu                              |
+|--------------|-------------------------------------------|
+| BERT         | NER (text z OCR)                          |
+| LiLT         | layout-aware (text + bounding boxy)       |
+| LayoutLMv3   | multimodální (text + layout + obraz)      |
+| Donut        | end-to-end (přímé zpracování obrazu)      |
 
-Modely jsou dostupné na Hugging Face: https://huggingface.co/TomasFAV
+Natrénované modely jsou dostupné na Hugging Face:  
+👉 https://huggingface.co/TomasFAV
 
 ---
 
 ## Dataset
 
-| Dataset | Typ        | Popis                      |
-|---------|------------|----------------------------|
-| V0      | syntetický | šablonové faktury          |
-| V1      | syntetický | náhodný layout             |
-| V2      | hybridní   | reálné + syntetické        |
-| V3      | reálný     | ručně anotované faktury    |
+V rámci projektu byl vytvořen vlastní dataset českých faktur:
 
-**Formáty dat:** NER (BIO tagging) · LayoutLMv3 (bbox + tokeny) · Donut (JSON) · COCO / YOLO
+| Dataset | Typ        | Popis                                      |
+|---------|------------|--------------------------------------------|
+| V0      | syntetický | šablonové faktury                          |
+| V1      | syntetický | faktury s náhodným layoutem                |
+| V2      | hybridní   | reálné faktury + syntetické komponenty     |
+| V3      | reálný     | ručně anotované faktury                    |
+| Test    | reálný     | testovací sada (39 dokumentů)              |
+
+### Podporované formáty
+
+- **NER (BIO tagging)**
+- **LayoutLMv3 (tokeny + bounding boxy)**
+- **Donut (JSON klíč–hodnota)**
+- **COCO / YOLO** (pro detekční přístupy)
 
 ---
 
@@ -56,12 +70,12 @@ app/
 └── main.py             # vstupní bod aplikace
 ```
 
-### Samostatné nástroje
+### Hlavní komponenty
 
-- **Generator** – generování syntetických faktur
-- **Enhancer** – augmentace reálných dokumentů
-- **Annotator** – ruční anotace + poloautomatické předznačení
-- **Client** – demo aplikace pro inference
+- **Generator** – generování syntetických faktur  
+- **Enhancer** – augmentace reálných dokumentů  
+- **Annotator** – ruční anotace s poloautomatickým předznačením  
+- **Client** – demonstrační aplikace pro inferenci  
 
 ---
 
@@ -99,27 +113,30 @@ python main.py enhance --metadata-path cesta/k/metadata_layoutlmv3.jsonl --sampl
 
 ## Vyhodnocení
 
-- micro-F1 / macro-F1
-- fuzzy F1 (s tolerancí)
-- document-level exact match
-- strukturální metrika (tree edit distance)
+Modely jsou vyhodnocovány na testovací sadě reálných faktur pomocí následujících metrik:
+
+- **micro-F1** (hlavní metrika)
+- **macro-F1**
+- **Document Exact Match (DEM)**
+- **Normalized Edit Distance (NED)**
+- **Strukturální metrika (tree edit distance)**
 
 ---
 
 ## Hlavní závěry
 
-- Syntetická data mohou výrazně pomoci, ale nestačí sama o sobě
-- Layout-aware modely výrazně překonávají čisté NER
-- End-to-end modely (Donut) jsou slibné, ale náročnější na data
-- Lokální řešení je možné, ale vyžaduje kompromisy
+- Reálná data (V3) mají zásadní vliv na kvalitu modelů
+- Hybridní dataset (V2) výrazně zlepšuje generalizaci
+- Layout-aware modely překonávají čistě textové přístupy
+- End-to-end model (Donut) dosahuje nejlepších výsledků, zejména v document-level metrikách
 
 ---
 
 ## Omezení
 
-- Silná závislost na kvalitě OCR (u NER přístupů)
-- Dataset je relativně malý v části reálných dat
-- Některé části projektu mají experimentální charakter
+- Závislost na kvalitě OCR (u NER přístupů)
+- Relativně malý počet reálných anotovaných faktur
+- Výsledky jsou omezeny na české prostředí a konkrétní strukturu dat
 
 ---
 
@@ -133,6 +150,6 @@ Vedoucí: Ing. Ladislav Lenc, Ph.D.
 
 ## Licence
 
-Tento projekt je určen primárně pro studijní a výzkumné účely.
+Projekt je určen primárně pro studijní a výzkumné účely.
 
-> Projekt vznikl jako výzkumný prototyp. Nejde o hotové produkční řešení, ale o základ pro experimenty, další vývoj a porovnávání přístupů k extrakci informací z českých faktur.
+> Jedná se o výzkumný prototyp sloužící k experimentálnímu porovnání přístupů ke zpracování dokumentů, nikoliv o produkční řešení.

@@ -50,8 +50,6 @@ class ModelController:
             return self.__layoutlmv3_model.predict_json(image, words, bboxes)
         elif option == Model.Donut:
             return self.__donut_model.predict_json(image)
-        elif option == Model.Pix2Struct:
-            ...
 
     def labels_to_json(self, words, labels) -> dict[str, str]:
         return self.__bert_model.labels_to_json(words, labels)
