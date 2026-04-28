@@ -1,6 +1,5 @@
 from unittest import defaultTestLoader
 from PIL import Image
-from configobj import flatten_errors
 from zss import Node
 import zss
 from nltk import edit_distance
