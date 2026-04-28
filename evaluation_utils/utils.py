@@ -1,5 +1,6 @@
 from unittest import defaultTestLoader
 from PIL import Image
+from configobj import flatten_errors
 from zss import Node
 import zss
 from nltk import edit_distance
@@ -523,6 +524,65 @@ def field_level_slot_accuracy(preds: List[dict], answers: List[dict]):
                 field_errors[key].append((pred_val, gt_val))
 
     return field_accuracy, field_errors
+
+def field_level_f1(preds: List[dict], answers: List[dict]):
+    field_f1 = defaultdict(lambda: [0.0, 0.0, 0.0, 0.0, 0.0])  # TP, TN, FP, FN, F1
+
+    field_names = [span_tag.text for span_tag in SpanTag if span_tag != SpanTag.O]
+
+    for pred, answer in zip(preds, answers):
+        ground_truth = {}
+        prediction = {}
+
+        for key, value in answer.items():
+            if value != "":
+                ground_truth[key] = value
+
+        for key, value in pred.items():
+            if value != "":
+                prediction[key] = value
+          
+
+        pred_dict = normalize_dict(prediction, True)
+        gt_dict = normalize_dict(ground_truth)
+
+        for key in field_names:
+            pred_val = pred_dict.get(key, None)
+            gt_val = gt_dict.get(key, None)
+
+            #nejaka hodnota pro dane pole je v obou slovnicich
+            if pred_val is not None and gt_val is not None:
+                
+                #TP
+                if pred_val == gt_val:
+                   field_f1[key][0] += 1
+                #FN a FP zároveň po vzoru DONUTU
+                else:
+                    field_f1[key][2] += 1
+                    field_f1[key][3] += 1
+
+            elif pred_val is not None and gt_val is None:
+                #FP
+                field_f1[key][2] += 1  
+
+            elif pred_val is None and gt_val is not None:
+                #FN
+                field_f1[key][3] += 1
+
+            elif pred_val is None and gt_val is None:
+                #TN
+                field_f1[key][1] += 1
+
+
+    for key in field_names:
+        tp = field_f1[key][0]
+        fp = field_f1[key][2]
+        fn = field_f1[key][3]
+
+        denom = tp + (fp + fn) / 2
+        field_f1[key][4] = tp / denom if denom > 0 else 0.0
+
+    return field_f1
 
 #zkopírováno z repozitáře clovai/donut
 def cal_acc(pred: dict, answer: dict):
