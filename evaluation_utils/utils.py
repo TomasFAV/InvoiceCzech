@@ -524,8 +524,8 @@ def field_level_slot_accuracy(preds: List[dict], answers: List[dict]):
 
     return field_accuracy, field_errors
 
-def field_level_f1(preds: List[dict], answers: List[dict]):
-    field_f1 = defaultdict(lambda: [0.0, 0.0, 0.0, 0.0, 0.0])  # TP, TN, FP, FN, F1
+def field_level_metrics(preds: List[dict], answers: List[dict]):
+    field_f1 = defaultdict(lambda: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # TP, TN, FP, FN, F1, Precision, Recall, Accuracy
 
     field_names = [span_tag.text for span_tag in SpanTag if span_tag != SpanTag.O]
 
@@ -575,11 +575,25 @@ def field_level_f1(preds: List[dict], answers: List[dict]):
 
     for key in field_names:
         tp = field_f1[key][0]
+        tn = field_f1[key][1]
         fp = field_f1[key][2]
         fn = field_f1[key][3]
 
-        denom = tp + (fp + fn) / 2
-        field_f1[key][4] = tp / denom if denom > 0 else 0.0
+        # F1
+        denom_f1 = tp + (fp + fn) / 2
+        field_f1[key][4] = tp / denom_f1 if denom_f1 > 0 else 0.0
+
+        # Precision
+        denom_p = tp + fp
+        field_f1[key][5] = tp / denom_p if denom_p > 0 else 0.0
+
+        # Recall
+        denom_r = tp + fn
+        field_f1[key][6] = tp / denom_r if denom_r > 0 else 0.0
+
+        # Accuracy
+        denom_acc = tp + tn + fp + fn
+        field_f1[key][7] = (tp + tn) / denom_acc if denom_acc > 0 else 0.0
 
     return field_f1
 
