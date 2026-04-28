@@ -572,6 +572,7 @@ def field_level_metrics(preds: List[dict], answers: List[dict]):
                 #TN
                 field_f1[key][1] += 1
 
+    macro_f1 = 0.0
 
     for key in field_names:
         tp = field_f1[key][0]
@@ -582,6 +583,7 @@ def field_level_metrics(preds: List[dict], answers: List[dict]):
         # F1
         denom_f1 = tp + (fp + fn) / 2
         field_f1[key][4] = tp / denom_f1 if denom_f1 > 0 else 0.0
+        macro_f1 += field_f1[key][4]
 
         # Precision
         denom_p = tp + fp
@@ -595,7 +597,9 @@ def field_level_metrics(preds: List[dict], answers: List[dict]):
         denom_acc = tp + tn + fp + fn
         field_f1[key][7] = (tp + tn) / denom_acc if denom_acc > 0 else 0.0
 
-    return field_f1
+    macro_f1 = macro_f1 / len(field_names)
+
+    return field_f1, macro_f1
 
 #zkopírováno z repozitáře clovai/donut
 def cal_acc(pred: dict, answer: dict):
@@ -660,63 +664,65 @@ def cal_ned(preds: List[dict], answers: List[dict]):
 import numpy
 
 def compute_metrics(preds: List[dict], answers: List[dict], file_names: List[str]):
-  document_exact_match = 0
+    document_exact_match = 0
 
-  f1_scores = list()
+    f1_scores = list()
 
-  preds = normalize_dict(preds, True)
-  answers = normalize_dict(answers, False)
+    preds = normalize_dict(preds, True)
+    answers = normalize_dict(answers, False)
 
-  micro_f1 = cal_f1(preds, answers)
-  micro_ned = cal_ned(preds, answers)
+    micro_f1 = cal_f1(preds, answers)
+    micro_ned = cal_ned(preds, answers)
 
-  mean_acc = 0.0
-  mean_f1 = 0.0 
-  mean_ned = 0.0
+    macro_f1 = field_level_metrics(preds, answers)[1]
+    
+    mean_acc = 0.0
+    mean_f1 = 0.0 
+    mean_ned = 0.0
 
-  f1_standard_deviation = 0.0
+    f1_standard_deviation = 0.0
 
-  for pred_json, gt_json in zip(preds, answers):
-    document_f1 = cal_f1([pred_json], [gt_json])
-    if(document_f1 == 1):
-      document_exact_match += 1
+    for pred_json, gt_json in zip(preds, answers):
+        document_f1 = cal_f1([pred_json], [gt_json])
+        if(document_f1 == 1):
+            document_exact_match += 1
 
-    document_acc = cal_acc(pred_json, gt_json)
+        document_acc = cal_acc(pred_json, gt_json)
 
-    mean_f1 += document_f1
-    mean_acc += document_acc
-    mean_ned += cal_ned([pred_json], [gt_json]) #field level
+        mean_f1 += document_f1
+        mean_acc += document_acc
+        mean_ned += cal_ned([pred_json], [gt_json]) #field level
 
-    f1_scores.append(document_f1)
+        f1_scores.append(document_f1)
 
-  documents_f1s = [{
-        "file_name": file_names[idx],
-        "f1": f1,
-    } for idx, f1  in enumerate(f1_scores)]
-  
-  documents_f1s.sort(key=lambda x: x["f1"])
+    documents_f1s = [{
+            "file_name": file_names[idx],
+            "f1": f1,
+        } for idx, f1  in enumerate(f1_scores)]
+    
+    documents_f1s.sort(key=lambda x: x["f1"])
 
-  mean_f1 = mean_f1/len(preds)
-  mean_acc = mean_acc/len(preds)
-  mean_ned = mean_ned/len(preds)
-  document_exact_match = document_exact_match/len(preds)
+    mean_f1 = mean_f1/len(preds)
+    mean_acc = mean_acc/len(preds)
+    mean_ned = mean_ned/len(preds)
+    document_exact_match = document_exact_match/len(preds)
 
-  f1_standard_deviation = numpy.std(f1_scores, ddof=1 if len(f1_scores) > 1 else 0)
+    f1_standard_deviation = numpy.std(f1_scores, ddof=1 if len(f1_scores) > 1 else 0)
 
-  f1_P50 = numpy.percentile(f1_scores, 50)
-  f1_P25 = numpy.percentile(f1_scores, 25)
-  f1_P05 = numpy.percentile(f1_scores, 5)
+    f1_P50 = numpy.percentile(f1_scores, 50)
+    f1_P25 = numpy.percentile(f1_scores, 25)
+    f1_P05 = numpy.percentile(f1_scores, 5)
 
-  
-  average_extractions = sorted(
-        documents_f1s,
-        key=lambda x: abs(x["f1"] - f1_P50)
-    )[:min(3, len(documents_f1s))]
+    
+    average_extractions = sorted(
+            documents_f1s,
+            key=lambda x: abs(x["f1"] - f1_P50)
+        )[:min(3, len(documents_f1s))]
 
-  return {"micro F1": micro_f1, "macro F1": mean_f1, "macro F1 min": numpy.min(f1_scores), "macro-f1-dev": f1_standard_deviation,
-          "macro-f1-P50": f1_P50, "macro-f1-P25": f1_P25, "macro-f1-P05": f1_P05, "accuracy": mean_acc, "document_exact_match": document_exact_match,
-          "mean-field-NED": micro_ned,"macro-ned":mean_ned, "worst_extractions": documents_f1s[:min(3, len(documents_f1s))],
-          "average_extractions": average_extractions, "best_extractions": documents_f1s[-(min(3, len(documents_f1s))):]}
+    return {"micro F1": micro_f1, "macro F1": macro_f1, "mean per-document F1": mean_f1, "per-document-f1-min": numpy.min(f1_scores), "per-document-f1-dev": f1_standard_deviation,
+            "per-document-f1-P50": f1_P50, "per-document-f1-P25": f1_P25, "per-document-f1-P05": f1_P05, "accuracy": mean_acc, "document_exact_match": document_exact_match,
+            "mean-field-NED": micro_ned,"per-document-f1-ned":mean_ned, "worst_extractions": documents_f1s[:min(3, len(documents_f1s))],
+            "average_extractions": average_extractions, "best_extractions": documents_f1s[-(min(3, len(documents_f1s))):]}
 
 
 from enum import Enum
