@@ -86,7 +86,6 @@ class CompanyB(InvoiceComponent):
         draw_styled_rect(d, (x, y, x + card_width, y + space), style)
         textRenderer._text(
             invoice,
-            d,
             (x + mm(3), y),
             text=label_text,
             font=scaled_f8b,
@@ -112,7 +111,7 @@ class CompanyB(InvoiceComponent):
 
         textRenderer._text(
             invoice,
-            d, (address_x, y),
+            (address_x, y),
             label="IČ: ",
             text=safe(values.register_id),
             font=scaled_f9,
@@ -123,7 +122,7 @@ class CompanyB(InvoiceComponent):
 
         textRenderer._text(
             invoice,
-            d, (address_x, y),
+            (address_x, y),
             label="DIČ: ",
             text=safe(values.tax_id),
             font=scaled_f9,
@@ -140,7 +139,7 @@ class CompanyB(InvoiceComponent):
                 y += space * 1.1
                 textRenderer._text(
                     invoice,
-                    d, (address_x, y),
+                    (address_x, y),
                     label="Telefonní spojení: ",
                     text=safe(values.phone),
                     font=scaled_f9,
@@ -152,7 +151,7 @@ class CompanyB(InvoiceComponent):
                 y += space
                 textRenderer._text(
                     invoice,
-                    d, (address_x, y),
+                    (address_x, y),
                     label="E-mail: ",
                     text=safe(values.mail),
                     font=scaled_f9,

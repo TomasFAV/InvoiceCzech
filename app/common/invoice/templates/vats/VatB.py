@@ -63,7 +63,7 @@ class VatB(InvoiceComponent):
             d.line([(x + pad_x, ly), (x + width - pad_x, ly)], fill=LINE_MID, width=1)
 
             textRenderer._text(
-                invoice, d, (col1, cy),
+                invoice, (col1, cy),
                 text=f"{v.vat_percentage}",
                 end="%",
                 font=font,
@@ -71,14 +71,14 @@ class VatB(InvoiceComponent):
                 span_tag=SpanTag.O
             )
             textRenderer._text(
-                invoice, d, (col2, cy),
+                invoice, (col2, cy),
                 text=fmt_money(v.vat_base),
                 font=font,
                 fill=INK,
                 span_tag=SpanTag.O
             )
             textRenderer._text(
-                invoice, d, (col3, cy),
+                invoice, (col3, cy),
                 text=fmt_money(v.vat),
                 font=font,
                 fill=INK,
@@ -109,7 +109,7 @@ class VatB(InvoiceComponent):
             d.line([(x + mm(2), y + mm(5)), (x + width - mm(2), y + mm(5))], fill=LINE_MID, width=1)
 
             textRenderer._text(
-                invoice, d, (col_sazba, y),
+                invoice, (col_sazba, y),
                 text=f"{v.vat_percentage}",
                 end="%",
                 font=textRenderer._f10b,
@@ -117,14 +117,14 @@ class VatB(InvoiceComponent):
                 span_tag=SpanTag.O
             )
             textRenderer._text(
-                invoice, d, (col_zaklad, y),
+                invoice, (col_zaklad, y),
                 text=fmt_money(v.vat_base),
                 font=textRenderer._f10,
                 fill=INK,
                 span_tag=SpanTag.O
             )
             textRenderer._text(
-                invoice, d, (col_dan, y),
+                invoice, (col_dan, y),
                 text=fmt_money(v.vat),
                 font=textRenderer._f10b,
                 fill=INK,

@@ -179,7 +179,7 @@ class HomePage(View):
 
         if result.ok:
             self.entities_panel.redraw_current()
-            self.invoice_canvas.partial_redraw()
+            self.invoice_canvas.full_redraw()
         else:
             messagebox.showerror("Chyba","Operace se nezdařila")
     # ---------- UI build ----------

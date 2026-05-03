@@ -248,13 +248,13 @@ class Invoice(json_serializable):
         return False
 
     def clear_tokens(self) -> None:
-        self._tokens = list()
+        self._tokens.clear()
 
     def clear_spans(self) -> None:
-        self._spans = list()
+        self._spans.clear()
 
     def clear_segments(self) -> None:
-        self._segments = list()
+        self._segments.clear()
 
     def clear(self) -> None:
         self.clear_tokens()

@@ -61,7 +61,6 @@ class VatC(InvoiceComponent):
 
             textRenderer._text(
                 invoice,
-                d,
                 (curr_x, y + row_height * 0.1),
                 label="DPH",
                 text=f"{v.vat_percentage}",
@@ -73,7 +72,6 @@ class VatC(InvoiceComponent):
 
             textRenderer._text(
                 invoice,
-                d,
                 (curr_x, y + row_height * 0.6),
                 text="Základ:",
                 font=scaled_f8b,
@@ -81,7 +79,6 @@ class VatC(InvoiceComponent):
             )
             textRenderer._text(
                 invoice,
-                d,
                 (curr_x + width * 0.1, y + row_height * 0.6),
                 text=fmt_money(v.vat_base),
                 font=scaled_f9,
@@ -91,7 +88,6 @@ class VatC(InvoiceComponent):
 
             textRenderer._text_right(
                 invoice,
-                d,
                 x + width - width * 0.1,
                 y + row_height * 0.1,
                 text="VÝŠE DANĚ",
@@ -100,7 +96,6 @@ class VatC(InvoiceComponent):
             )
             textRenderer._text_right(
                 invoice,
-                d,
                 x + width - width * 0.1,
                 y + row_height * 0.6,
                 text=fmt_money(v.vat),
@@ -135,7 +130,6 @@ class VatC(InvoiceComponent):
 
             textRenderer._text(
                 invoice,
-                d,
                 (curr_x, y + mm(1.5)),
                 label="DPH",
                 text=f"{v.vat_percentage}",
@@ -147,7 +141,6 @@ class VatC(InvoiceComponent):
 
             textRenderer._text(
                 invoice,
-                d,
                 (curr_x, y + mm(4.5)),
                 text="Základ:",
                 font=textRenderer._f8,
@@ -155,7 +148,6 @@ class VatC(InvoiceComponent):
             )
             textRenderer._text(
                 invoice,
-                d,
                 (curr_x + mm(10), y + mm(4.5)),
                 text=fmt_money(v.vat_base),
                 font=textRenderer._f9,
@@ -165,7 +157,6 @@ class VatC(InvoiceComponent):
 
             textRenderer._text_right(
                 invoice,
-                d,
                 x + badge_w - mm(3),
                 y + mm(1.5),
                 text="VÝŠE DANĚ",
@@ -174,7 +165,6 @@ class VatC(InvoiceComponent):
             )
             textRenderer._text_right(
                 invoice,
-                d,
                 x + badge_w - mm(3),
                 y + mm(4.5),
                 text=fmt_money(v.vat),

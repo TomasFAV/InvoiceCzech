@@ -163,6 +163,8 @@ class InvoiceCanvas(Component):
         self.load_spans(spans)
         self.load_segments(segments)
 
+        self.toogle_layers()
+
     def load_image(self, img_path:str) -> None:
         self.canvas.load_image(img_path)
     

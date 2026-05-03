@@ -67,7 +67,7 @@ class TextRenderer:
 
         if label is not None:
             #label bez tagu
-            x, _ = self._text(invoice, draw, poss, text=label,font=font, fill=fill, span_tag=SpanTag.O)
+            x, _ = self._text(invoice, poss, text=label,font=font, fill=fill, span_tag=SpanTag.O)
         
         spans = [text]#víceslovný span
         if(span_tag == SpanTag.O):
@@ -145,7 +145,7 @@ class TextRenderer:
 
         if end is not None:
             #label bez tagu
-            self._text(invoice, draw, (x, y), text=end, font=font, fill=fill, span_tag=SpanTag.O)
+            self._text(invoice, (x, y), text=end, font=font, fill=fill, span_tag=SpanTag.O)
             x += text_width(end, font)
 
         return (x, span_index)

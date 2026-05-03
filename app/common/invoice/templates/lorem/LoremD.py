@@ -63,6 +63,6 @@ class LoremD(InvoiceComponent):
         
         d.rectangle([stamp_x, stamp_y, stamp_x + mm(30), stamp_y + mm(12)], outline=(50, 150, 50), width=2)
         textRenderer._text(invoice, (stamp_x + mm(4), stamp_y + mm(2)), text="EXPEDOVÁNO", font=textRenderer._f8b, fill=(50, 150, 50))
-        textRenderer._text(invoice,d, (stamp_x + mm(7), stamp_y + mm(7)), text=get_rand_date(), font=textRenderer._f8, fill=(50, 150, 50))
+        textRenderer._text(invoice, (stamp_x + mm(7), stamp_y + mm(7)), text=get_rand_date(), font=textRenderer._f8, fill=(50, 150, 50))
 
         return max(y, stamp_y + mm(15)) + mm(5)

@@ -82,14 +82,12 @@ class FlexibeeInvoice(InvoiceTemplate):
         textRenderer._text(invoice, (lx, ly), "Dodavatel:", font=textRenderer._f11, fill=INK)
         ly += mm(6)
         textRenderer._text(invoice,
-            d,
             (lx, ly),
             text=safe(data.supplier.name),
             font=textRenderer._f14b,
             fill=INK,)
         ly += mm(6.5)
         textRenderer._text(invoice,
-            d,
             (lx, ly),
             text=safe(data.supplier.address),
             font=textRenderer._f12,
@@ -103,7 +101,6 @@ class FlexibeeInvoice(InvoiceTemplate):
 
         # IČ/DIČ
         textRenderer._text(invoice,
-            d,
             (lx, ly),
             text=safe(data.supplier.register_id),
             label="IČO: ",
@@ -112,7 +109,6 @@ class FlexibeeInvoice(InvoiceTemplate):
             span_tag=SpanTag.SUPPLIER_REGISTER_ID)
         ly += mm(5)
         textRenderer._text(invoice,
-            d,
             (lx, ly),
             text=safe(data.supplier.tax_id),
             label="DIČ: ",
@@ -125,7 +121,6 @@ class FlexibeeInvoice(InvoiceTemplate):
         textRenderer._text(invoice, (lx, ly), "E-mail:", font=textRenderer._f10, fill=MUTED)
         if getattr(data.supplier, "email", None):
             textRenderer._text(invoice,
-                d,
                 (lx + mm(24), ly),
                 safe(data.supplier.email),
                 font=textRenderer._f10,
@@ -135,7 +130,6 @@ class FlexibeeInvoice(InvoiceTemplate):
         textRenderer._text(invoice, (lx, ly), "WWW:", font=textRenderer._f10, fill=MUTED)
         if getattr(data.supplier, "web", None):
             textRenderer._text(invoice,
-                d,
                 (lx + mm(24), ly),
                 safe(data.supplier.web),
                 font=textRenderer._f10,
@@ -153,7 +147,6 @@ class FlexibeeInvoice(InvoiceTemplate):
         textRenderer._text(invoice, (rx, ry), "Odběratel - sídlo:", font=textRenderer._f11, fill=INK)
 
         textRenderer._text(invoice,
-            d,
             (rx + mm(44), ry),
             text=safe(data.customer.name),
             font=textRenderer._f11b,
@@ -161,7 +154,6 @@ class FlexibeeInvoice(InvoiceTemplate):
             span_tag=SpanTag.CUSTOMER_NAME if hasattr(SpanTag, "CUSTOMER_NAME") else SpanTag.O)
         ry += mm(5.2)
         textRenderer._text(invoice,
-            d,
             (rx + mm(44), ry),
             text=safe(data.customer.address),
             font=textRenderer._f11b,
@@ -169,7 +161,6 @@ class FlexibeeInvoice(InvoiceTemplate):
             span_tag=SpanTag.CUSTOMER_ADDRESS if hasattr(SpanTag, "CUSTOMER_ADDRESS") else SpanTag.O)
         ry += mm(7)
         textRenderer._text(invoice,
-            d,
             (rx + mm(44), ry),
             text=safe(data.customer.register_id),
             label="IČO: ",
@@ -178,7 +169,6 @@ class FlexibeeInvoice(InvoiceTemplate):
             span_tag=SpanTag.CUSTOMER_REGISTER_ID)
         ry += mm(4)
         textRenderer._text(invoice,
-            d,
             (rx + mm(44), ry),
             text=safe(data.customer.tax_id),
             label="DIČ: ",
@@ -236,7 +226,6 @@ class FlexibeeInvoice(InvoiceTemplate):
         textRenderer._text(invoice, (blx, bly), "Banka:", font=textRenderer._f11, fill=INK)
         if getattr(data, "bank_account", None):
             textRenderer._text(invoice,
-                d,
                 (blx + mm(22), bly),
                 text=safe(data.bank_account.name),
                 font=textRenderer._f11,
@@ -262,7 +251,6 @@ class FlexibeeInvoice(InvoiceTemplate):
         bly += mm(6)
         textRenderer._text(invoice, (blx, bly), "IBAN:", font=textRenderer._f11, fill=INK)
         textRenderer._text(invoice,
-            d,
             (blx + mm(34), bly),
             text=safe(getattr(data, "IBAN", "")),
             font=textRenderer._f11,
@@ -272,7 +260,6 @@ class FlexibeeInvoice(InvoiceTemplate):
         bly += mm(5)
         textRenderer._text(invoice, (blx, bly), "BIC:", font=textRenderer._f11, fill=INK)
         textRenderer._text(invoice,
-            d,
             (blx + mm(30), bly),
             text=safe(getattr(data.bank_account, "BIC", "")) if getattr(data, "bank_account", None) else "",
             font=textRenderer._f11,
@@ -283,7 +270,6 @@ class FlexibeeInvoice(InvoiceTemplate):
         sym_y = bly + mm(6)
         textRenderer._text(invoice, (blx, sym_y), "Var. sym.:", font=textRenderer._f11, fill=INK)
         textRenderer._text(invoice,
-            d,
             (blx + mm(30), sym_y),
             text=safe(data.variable_symbol),
             font=textRenderer._f11b,
@@ -292,7 +278,6 @@ class FlexibeeInvoice(InvoiceTemplate):
         sym_y += mm(5)
         textRenderer._text(invoice, (blx, sym_y), "Konst. sym.:", font=textRenderer._f11, fill=INK)
         textRenderer._text(invoice,
-            d,
             (blx + mm(30), sym_y),
             text=safe(getattr(data, "constant_symbol", "")),
             font=textRenderer._f11b,
@@ -301,7 +286,6 @@ class FlexibeeInvoice(InvoiceTemplate):
         sym_y += mm(5)
         textRenderer._text(invoice, (blx, sym_y), "Spec. sym.:", font=textRenderer._f11, fill=INK)
         textRenderer._text(invoice,
-            d,
             (blx + mm(30), sym_y),
             text=safe(getattr(data, "specific_symbol", "")),
             font=textRenderer._f11b,
@@ -312,7 +296,6 @@ class FlexibeeInvoice(InvoiceTemplate):
         pay_y = main_bottom + mm(-12)
         textRenderer._text(invoice, (blx, pay_y), "Forma úhrady:", font=textRenderer._f11, fill=INK)
         textRenderer._text(invoice,
-            d,
             (blx + mm(34), pay_y),
             text=safe(data.payment_type),
             font=textRenderer._f11,
@@ -439,7 +422,6 @@ class FlexibeeInvoice(InvoiceTemplate):
             # "Základ 21% .... DPH 21% ...."
             textRenderer._text(invoice, (recap_x0, y_re), "Základ", font=textRenderer._f10, fill=INK)
             textRenderer._text(invoice,
-                d,
                 (recap_x0 + mm(22), y_re),
                 text=fmt_money(v.vat_base),
                 font=textRenderer._f10,

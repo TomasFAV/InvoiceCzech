@@ -84,7 +84,7 @@ class KnihyDobrovskyInvoice(InvoiceTemplate):
         yl += mm(5.2)
 
         textRenderer._text(invoice,
-            d, (x0 + mm(10), yl),
+            (x0 + mm(10), yl),
             text=safe(seller_reg),
             label="identifikační číslo: ",
             font=textRenderer._f10, fill=INK,
@@ -92,7 +92,7 @@ class KnihyDobrovskyInvoice(InvoiceTemplate):
         yl += mm(5.2)
 
         textRenderer._text(invoice,
-            d, (x0 + mm(10), yl),
+            (x0 + mm(10), yl),
             text=safe(seller_tax),
             label="daňové identifikační číslo plátce: ",
             font=textRenderer._f10, fill=INK,
@@ -156,13 +156,13 @@ class KnihyDobrovskyInvoice(InvoiceTemplate):
 
         textRenderer._text(invoice, (x_mid + mm(10), y_ob0 + mm(22)), "identifikační číslo:", font=textRenderer._f10b, fill=INK)
         last_x = textRenderer._text(invoice,
-            d, (x_mid + mm(42), y_ob0 + mm(22)),
+            (x_mid + mm(42), y_ob0 + mm(22)),
             cust_reg, font=textRenderer._f10, fill=INK,
             span_tag=SpanTag.CUSTOMER_REGISTER_ID
         )[0]
         last_x = textRenderer._text(invoice, (last_x + mm(5), y_ob0 + mm(22)), "dič plátce:", font=textRenderer._f10b, fill=INK)[0]
         textRenderer._text(invoice,
-            d, (last_x + mm(3), y_ob0 + mm(22)),
+            (last_x + mm(3), y_ob0 + mm(22)),
             cust_tax, font=textRenderer._f10, fill=INK,
             span_tag=SpanTag.CUSTOMER_TAX_ID
         )

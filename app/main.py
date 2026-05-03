@@ -66,8 +66,7 @@ def parse_args() -> argparse.Namespace:
 
     generate_parser.add_argument(
         "--random",
-        type=bool,
-        required=True,
+        action="store_true",
         help="Použít random layout šablony"
     )
 

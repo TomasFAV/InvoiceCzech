@@ -337,7 +337,7 @@ class InvoiceGenerator:
         print(f" - COCO: {paths['coco']}")
                 
     def generate(train_count:int, test_count:int, validation_count:int, random_template:bool = False)->bool:
-        
+
         invoice_classes: list[type[InvoiceTemplate]] = [
                 AInvoice,
                 AlzaInvoice,
