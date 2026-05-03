@@ -228,7 +228,7 @@ def fit_line_bounding_box_font(text:str, box_width:float, font_path:str="DejaVuS
             font = truetype(font_path, font_size)
 
             if font_size < min_font_size:
-                return None, -1
+                return None, min_font_size
             
         return font, font_size
     
